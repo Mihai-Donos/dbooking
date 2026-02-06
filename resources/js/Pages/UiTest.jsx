@@ -1,7 +1,7 @@
 export default function UiTest({ message, serverTime }) {
     return (
       <div className="min-h-screen bg-slate-50 p-8">
-        <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow">
+        <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-semibold text-slate-900">
             {message} ✅
           </h1>
