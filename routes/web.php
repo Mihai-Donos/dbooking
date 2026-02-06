@@ -14,6 +14,13 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/ui-test', function () {
+    return Inertia::render('UiTest', [
+        'message' => 'Inertia + React läuft ',
+        'serverTime' => now()->toDateTimeString(),
+    ]);
+});
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -24,4 +31,4 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

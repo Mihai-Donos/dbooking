@@ -4,25 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EventOffer extends Model
 {
-    /** @use HasFactory<\Database\Factories\EventOfferFactory> */
     use HasFactory;
 
-    public function offers()
-    {
-        return $this->belongsTo(Offer::class);
-    }
-
-    public function events()
+    public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
     }
 
-    public function bookings()
+    // event_offers.offering_id -> offers.id
+    public function offer(): BelongsTo
     {
-        return $this->hasMany(Booking::class);
+        return $this->belongsTo(Offer::class, 'offering_id');
     }
-
 }

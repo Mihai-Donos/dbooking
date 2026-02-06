@@ -5,34 +5,36 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-            $table->string('label'); // first name and family name provided by the user, separated by a semicolon ;
-            $table->dateTime('from_date'); // booked from date
-            $table->dateTime('to_date'); // booken to date
-            $table->boolean('glutenfree')->default(0);   // informational purpose for meals
-            $table->boolean('vegetarian')->default(0);   // informational purpose for meals
-            $table->boolean('lactose_free')->default(0); // informational purpose for meals
-            $table->boolean('single_room')->default(0);  // informational purpose for room assignments
-            $table->boolean('baby_bed')->default(0);     // informational purpose for room assignments           
+            $table->string('label');
+            $table->dateTime('from_date');
+            $table->dateTime('to_date');
+            $table->boolean('glutenfree')->default(false);
+            $table->boolean('vegetarian')->default(false);
+            $table->boolean('lactose_free')->default(false);
+            $table->boolean('single_room')->default(false);
+            $table->boolean('baby_bed')->default(false);
             $table->timestamps();
 
-            //FKs
-            $table->foreignId('event_id')->references('id')->on('events'); // FK related event   
-            $table->foreignId('offering_id')->references('id')->on('offers'); // FK related offering
-            $table->foreignId('user_id')->references('id')->on('users')->onDelete('cascade'); // FK related user   
-            $table->foreignId('room_id')->default(0)->references('id')->on('rooms'); // FK to assigned room
+            $table->foreignId('event_id')
+                ->constrained('events');
+
+            $table->foreignId('offering_id')
+                ->constrained('offers');
+
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->foreignId('room_id')
+                ->nullable()
+                ->constrained('rooms');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('bookings');

@@ -3,74 +3,37 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-
-use App\Models\Offer;
-use App\Models\User;
-use App\Models\Invoice;
-use App\Models\InvoicePosition;
-use App\Models\Event;
-use App\Models\EventOffer;
-use App\Models\Booking;
-use App\Models\Location;
-use App\Models\Room;
+use App\Models\{Offer, User, Invoice, InvoicePosition, Event, EventOffer, Booking, Location, Room};
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        /**
-         * 1) Allgemeine Offers anlegen
-         */
-        $offers = Offer::factory()
-            ->count(14)
+        // 1) Offers
+        $offers = Offer::factory()->count(14)->create();
+
+        // 2) Location + Rooms (garantiert 30 Rooms an dieser Location)
+        $location = Location::factory()
+            ->has(Room::factory()->count(30), 'rooms')
             ->create();
 
-        /**
-         * 2) Event + Location + Rooms anlegen
-         *
-         * Annahmen:
-         * - Event hat relation: location()
-         * - Location hat relation: rooms()
-         */
+        // 3) Event gehört zu dieser Location
         $event = Event::factory()
-            ->has(
-                Location::factory()
-                    ->count(1)
-                    ->has(Room::factory()->count(30), 'rooms'),
-                'location'
-            )
+            ->for($location, 'location') // setzt location_id
             ->create();
 
-        /**
-         * 3) EventOffers anlegen und mit bestehenden Offers verknüpfen
-         *
-         * Annahmen:
-         * - EventOffer gehört zu Event über relation: event()
-         * - EventOffer gehört zu Offer über relation: offer()
-         * - Event hat relation: eventOffers()
-         */
+        // 4) Vier Offer-Typen auswählen
         $selectedOffers = $offers->random(4);
 
+        // 5) EventOffers anlegen (event_id + offering_id)
         foreach ($selectedOffers as $offer) {
-            EventOffer::factory()
-                ->for($event, 'event')
-                ->for($offer, 'offer')
-                ->create();
+            EventOffer::factory()->state([
+                'event_id' => $event->id,
+                'offering_id' => $offer->id,
+            ])->create();
         }
 
-        // IDs einmalig holen (performant)
-        $eventOfferIds = $event->eventOffers()->pluck('id');
-
-        /**
-         * 4) Users + Invoices + InvoicePositions anlegen
-         *
-         * Annahmen:
-         * - User hat relation: invoices()
-         * - Invoice hat relation: invoicePositions()
-         */
+        // 6) Users + Invoices + Positions
         $users = User::factory()
             ->count(2)
             ->has(
@@ -81,21 +44,18 @@ class DatabaseSeeder extends Seeder
             )
             ->create();
 
-        /**
-         * 5) Pro User: 3 Bookings, jeweils für das Event + zufälliges EventOffer
-         *
-         * Annahmen:
-         * - Booking gehört zu User über relation: user()
-         * - Booking gehört zu Event über relation: event()
-         * - Booking hat FK event_offer_id (oder relation eventOffer())
-         */
+        // 7) Bookings erstellen
+        $offeringIds = $selectedOffers->pluck('id');
+        $roomIds = $location->rooms()->pluck('id'); // ✅ sicher, weil wir Location+Rooms selbst erstellt haben
+
         foreach ($users as $user) {
             Booking::factory()
                 ->count(3)
-                ->for($user, 'user')
-                ->for($event, 'event')
                 ->state(fn() => [
-                    'event_offer_id' => $eventOfferIds->random(),
+                    'user_id' => $user->id,
+                    'event_id' => $event->id,
+                    'offering_id' => $offeringIds->random(),
+                    'room_id' => $roomIds->isNotEmpty() ? $roomIds->random() : null, // room_id ist nullable
                 ])
                 ->create();
         }

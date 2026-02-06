@@ -2,31 +2,22 @@
 
 namespace Database\Factories;
 
-use App\Models\Event;
 use App\Models\Location;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Event>
- */
 class EventFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
-        $start = $this->faker->dateTime();
+        $start = $this->faker->dateTimeBetween('-30 days', '+30 days');
+        $end = (clone $start)->modify('+' . $this->faker->numberBetween(1, 14) . ' days');
 
         return [
             'location_id' => Location::factory(),
-            'event_id' => Event::factory(),
-            'name' => $this->faker->title,
-            'description' => $this->faker->sentence(5),
+            'name' => $this->faker->words(3, true),
+            'description' => $this->faker->sentence(10),
             'start_date' => $start,
-            'end_date' => $this->faker->dateTimeBetween($start, '2025-12-31')
+            'end_date' => $end,
         ];
     }
 }
