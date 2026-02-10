@@ -1,3 +1,6 @@
+window.addEventListener("error", (e) => console.error("Global error:", e.error || e.message));
+window.addEventListener("unhandledrejection", (e) => console.error("Unhandled:", e.reason));
+
 import '../css/app.css';
 import './bootstrap';
 

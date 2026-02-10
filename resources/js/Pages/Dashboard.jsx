@@ -1,26 +1,31 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import React from "react";
+import AppShell from "@/Layouts/AppShell";
 
 export default function Dashboard() {
-    return (
-        <AuthenticatedLayout
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Dashboard
-                </h2>
-            }
-        >
-            <Head title="Dashboard" />
+  return (
+    <AppShell title="Dashboard">
+      <div className="space-y-3">
+        <p className="text-sm text-zinc-700">
+          Dashboard Platzhalter. Hier kommen später KPIs/Widgets rein.
+        </p>
 
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="overflow-hidden bg-white shadow-xs sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            You're logged in!
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </AuthenticatedLayout>
-    );
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Card title="Bookings" value="—" />
+          <Card title="Revenue" value="—" />
+          <Card title="Open Tasks" value="—" />
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function Card({ title, value }) {
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        {title}
+      </div>
+      <div className="mt-2 text-2xl font-semibold">{value}</div>
+    </div>
+  );
 }

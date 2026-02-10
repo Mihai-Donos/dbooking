@@ -1,0 +1,68 @@
+/* resources/css/additional-styles/utility-patterns.css */
+
+/* Buttons (Soft UI baseline) */
+.btn,
+.btn-lg,
+.btn-sm,
+.btn-xs {
+  @apply inline-flex items-center justify-center font-semibold text-sm leading-5 transition
+         rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30
+         shadow-xs;
+}
+
+.btn { @apply px-4 py-2.5; }
+.btn-lg { @apply px-5 py-3; }
+.btn-sm { @apply px-3 py-2 text-[13px]; }
+.btn-xs { @apply px-2.5 py-1.5 text-[12px]; }
+
+/* Optional convenience variants (kannst du nach und nach nutzen) */
+.btn-primary { @apply bg-brand-500 text-white hover:bg-brand-600; }
+.btn-secondary { @apply bg-white text-gray-700 hover:text-gray-900; }
+.btn-danger { @apply bg-rose-500 text-white hover:bg-rose-600; }
+.btn-soft { @apply bg-gray-50 text-gray-700 hover:bg-white; }
+
+/* Forms (Soft UI baseline) */
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration { -webkit-appearance: none; }
+
+.form-input,
+.form-textarea,
+.form-multiselect,
+.form-select,
+.form-checkbox,
+.form-radio {
+  @apply bg-white border focus:ring-0 focus:ring-offset-0;
+}
+
+/* Soft inputs */
+.form-input,
+.form-textarea,
+.form-multiselect,
+.form-select {
+  @apply text-sm text-gray-800 leading-5 px-4 py-2.5
+         rounded-2xl
+         border-gray-200/60 hover:border-gray-300/70
+         shadow-xs
+         placeholder-gray-400
+         focus:border-brand-200;
+}
+
+/* Make selects roomy like Soft UI */
+.form-select { @apply pr-10; }
+
+.form-checkbox,
+.form-radio {
+  @apply border border-gray-300/70 shadow-xs;
+}
+
+/* Blue1 brand checks */
+.form-checkbox,
+.form-radio {
+  @apply text-brand-500 checked:bg-brand-500 checked:border-transparent;
+}
+
+/* No scrollbar */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

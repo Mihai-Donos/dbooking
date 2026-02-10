@@ -1,0 +1,84 @@
+/* resources/css/additional-styles/blue1-softui.css */
+
+@layer components {
+    /* ---------- Surfaces / Layout ---------- */
+    .soft-surface {
+      @apply rounded-3xl bg-white border border-white/70 shadow-[0_20px_27px_0_rgba(0,0,0,0.06)];
+    }
+  
+    .soft-glass {
+      @apply rounded-3xl bg-white/70 backdrop-blur border border-white/60 shadow-[0_20px_27px_0_rgba(0,0,0,0.06)];
+    }
+  
+    .soft-muted {
+      @apply rounded-3xl bg-gray-50 border border-white/60 shadow-[0_20px_27px_0_rgba(0,0,0,0.04)];
+    }
+  
+    .soft-divider {
+      @apply h-px w-full bg-gray-200/60;
+    }
+  
+    .soft-title {
+      @apply text-[18px] font-bold tracking-tight text-gray-900;
+    }
+  
+    .soft-subtitle {
+      @apply text-sm text-gray-500;
+    }
+  
+    /* Page background glow (Do-Blue Richtung) */
+    .soft-app-bg {
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(43,182,247,0.12), transparent 45%),
+        radial-gradient(900px 500px at 90% 30%, rgba(43,182,247,0.10), transparent 40%),
+        linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+    }
+  
+    /* ---------- Badges ---------- */
+    .soft-badge {
+        @apply inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold border;
+      }
+    .soft-badge-neutral { @apply bg-gray-100 text-gray-700 border-gray-200/60; }
+    .soft-badge-info    { @apply bg-brand-50 text-brand-700 border-brand-200/60; }
+    .soft-badge-success { @apply bg-emerald-50 text-emerald-700 border-emerald-200/60; }
+    .soft-badge-warn    { @apply bg-amber-50 text-amber-800 border-amber-200/60; }
+    .soft-badge-danger  { @apply bg-rose-50 text-rose-700 border-rose-200/60; }
+  
+    /* ---------- Alerts ---------- */
+    .soft-alert {
+      @apply rounded-3xl border p-4 shadow-xs;
+    }
+    .soft-alert-info { @apply bg-brand-50/60 border-brand-200/60 text-brand-900; }
+    .soft-alert-success { @apply bg-emerald-50/60 border-emerald-200/60 text-emerald-900; }
+    .soft-alert-warn { @apply bg-amber-50/60 border-amber-200/60 text-amber-900; }
+    .soft-alert-danger { @apply bg-rose-50/60 border-rose-200/60 text-rose-900; }
+  
+    /* ---------- Tables ---------- */
+    .soft-table-wrap {
+      @apply overflow-hidden rounded-3xl bg-white border border-white/70 shadow-[0_20px_27px_0_rgba(0,0,0,0.06)];
+    }
+  
+    .soft-table {
+      @apply w-full text-left text-sm;
+    }
+  
+    .soft-table thead {
+      @apply bg-white;
+    }
+  
+    .soft-table th {
+      @apply px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-400 border-b border-gray-200/60;
+    }
+  
+    .soft-table td {
+      @apply px-4 py-3 text-gray-700 border-b border-gray-100;
+    }
+  
+    .soft-table tr {
+      @apply hover:bg-gray-50/60;
+    }
+  
+    .soft-table tr:last-child td {
+      @apply border-b-0;
+    }
+  }

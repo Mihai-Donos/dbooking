@@ -1,6 +1,17 @@
-@import 'tailwindcss';
+/* resources/css/app.css */
 
-@plugin '@tailwindcss/forms';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=fallback');
+
+@import 'tailwindcss';
+@import './additional-styles/utility-patterns.css' layer(components);
+@import './additional-styles/blue1-softui.css' layer(components);
+
+@plugin "@tailwindcss/forms" {
+  strategy: base;
+}
+
+@custom-variant dark (&:is(.dark *));
+@custom-variant sidebar-expanded (&:is(.sidebar-expanded *));
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -9,25 +20,63 @@
 @source '../js/**/*.jsx';
 
 @theme {
+  /* Font */
   --font-sans:
-    Figtree, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    Inter, Figtree, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+  /* Soft UI-ish shadows (weicher als RED1) */
+  --shadow-xs: 0 8px 16px rgb(0 0 0 / 0.06);
+  --shadow-sm: 0 20px 27px 0 rgb(0 0 0 / 0.06);
+
+  /* Neutral palette (leicht, milchig) */
+  --color-gray-50:  #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* BLUE1 Brand (Soft UI Info) */
+  /* BLUE1 Brand (Do-Logo Richtung) */
+  --color-brand-50:  #EAF8FE;
+  --color-brand-100: #D9F2FE;
+  --color-brand-200: #B5E5FC;
+  --color-brand-300: #8AD7FB;
+  --color-brand-400: #60C8F9;
+  --color-brand-500: #2BB6F7; /* <-- Hauptfarbe */
+  --color-brand-600: #26A0D9;
+  --color-brand-700: #2088B9;
+  --color-brand-800: #1B7199;
+  --color-brand-900: #155777;
+
+  --breakpoint-xs: 480px;
 }
 
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-800;
+  }
+
+  /*
+    Tailwind v4 border compatibility:
+    keep old look for elements without explicit border color utilities.
+  */
   *,
   ::after,
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: color-mix(in oklab, var(--color-gray-200) 70%, transparent);
   }
 }
