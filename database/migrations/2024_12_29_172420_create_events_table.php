@@ -9,14 +9,23 @@ return new class extends Migration {
     {
         Schema::create('events', function (Blueprint $table) {
             $table->id();
+
             $table->string('name');
             $table->text('description');
+
             $table->dateTime('start_date');
             $table->dateTime('end_date');
+
             $table->timestamps();
 
             $table->foreignId('location_id')
                 ->constrained('locations')
+                ->cascadeOnDelete();
+
+            // entspricht deiner DB-Struktur (nullable + FK users + cascade)
+            $table->foreignId('host_id')
+                ->nullable()
+                ->constrained('users')
                 ->cascadeOnDelete();
         });
     }

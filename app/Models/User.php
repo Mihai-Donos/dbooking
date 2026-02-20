@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Enums\UserStatus;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -20,6 +22,9 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'role',
+        'status',
+        'notes',
         'password',
     ];
 
@@ -38,13 +43,11 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'status' => UserStatus::class,
+    ];
 
     public function bookings()
     {
@@ -55,4 +58,30 @@ class User extends Authenticatable
     {
         return $this->hasMany(Invoice::class);
     }
+
+    public function events()
+    {
+        return $this->belongsToMany(\App\Models\Event::class)
+            ->withPivot('visible')
+            ->withTimestamps();
+    }
+
+    public function locations()
+    {
+        return $this->belongsToMany(\App\Models\Location::class)
+            ->withPivot('visible')
+            ->withTimestamps();
+    }
+
+    public function visibleLocations()
+    {
+        return $this->locations()->wherePivot('visible', true);
+    }
+
+    // Optional helper
+    public function scopeHosts($q)
+    {
+        return $q->where('role', 'host');
+    }
+
 }
