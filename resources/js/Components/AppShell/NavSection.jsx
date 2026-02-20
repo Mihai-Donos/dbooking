@@ -1,22 +1,26 @@
 // resources/js/Components/AppShell/NavSection.jsx
-
 import React from "react";
 import NavItem from "@/Components/AppShell/NavItem";
 
 export default function NavSection({ title, items, currentPath, onNavigate }) {
-  return (
-    <div className="space-y-2">
-      <h3 className="px-3 text-xs font-bold uppercase tracking-wide text-gray-400">
-        {title}
-      </h3>
+  if (!items?.length) return null;
 
-      <ul className="space-y-2">
+  return (
+    <section className="space-y-2">
+      <div className="px-1 text-[11px] font-extrabold uppercase tracking-wide text-gray-500">
+        {title}
+      </div>
+
+      <div className="space-y-1">
         {items.map((item) => (
-          <li key={item.href}>
-            <NavItem item={item} currentPath={currentPath} onNavigate={onNavigate} />
-          </li>
+          <NavItem
+            key={item.label}
+            item={item}
+            currentPath={currentPath}
+            onNavigate={onNavigate}
+          />
         ))}
-      </ul>
-    </div>
+      </div>
+    </section>
   );
 }

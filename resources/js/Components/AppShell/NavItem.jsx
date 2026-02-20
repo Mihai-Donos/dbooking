@@ -1,108 +1,124 @@
 // resources/js/Components/AppShell/NavItem.jsx
-
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "@inertiajs/react";
+import { ChevronDown } from "lucide-react";
 
-/* Minimal icon set (du kannst jederzeit erweitern) */
-const Icons = {
-  dashboard: (props) => (
-    <svg viewBox="0 0 16 16" {...props}>
-      <path d="M6.068 7.482A2.003 2.003 0 0 0 8 10a2 2 0 1 0-.518-3.932L3.707 2.293a1 1 0 0 0-1.414 1.414l3.775 3.775Z" />
-      <path d="M8 0a8 8 0 1 1-8 8 8 8 0 0 1 8-8Zm0 2a6 6 0 1 0 6 6 6 6 0 0 0-6-6Z" />
-    </svg>
-  ),
-  calendar: (props) => (
-    <svg viewBox="0 0 16 16" {...props}>
-      <path d="M5 0h2v2H5V0Zm4 0h2v2H9V0Z" />
-      <path d="M2 2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 4v8h12V6H2Z" />
-    </svg>
-  ),
-  plus: (props) => (
-    <svg viewBox="0 0 16 16" {...props}>
-      <path d="M7 1h2v6h6v2H9v6H7V9H1V7h6V1Z" />
-    </svg>
-  ),
-  archive: (props) => (
-    <svg viewBox="0 0 16 16" {...props}>
-      <path d="M1 2a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2H1V2Zm1 3h12v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5Zm4 2v2h4V7H6Z" />
-    </svg>
-  ),
-  help: (props) => (
-    <svg viewBox="0 0 16 16" {...props}>
-      <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" />
-      <path d="M7.25 11.5h1.5V13h-1.5v-1.5ZM8 3.5c1.38 0 2.5.95 2.5 2.25 0 1.57-1.5 1.9-1.9 2.4-.18.22-.23.43-.23.85v.25h-1.5v-.35c0-.7.14-1.12.44-1.49.56-.7 1.69-.95 1.69-1.66 0-.48-.44-.85-1-.85-.6 0-1.03.34-1.14.94l-1.47-.3C5.6 4.25 6.65 3.5 8 3.5Z" />
-    </svg>
-  ),
-  spark: (props) => (
-    <svg viewBox="0 0 16 16" {...props}>
-      <path d="M8 0 9.5 6.5 16 8l-6.5 1.5L8 16 6.5 9.5 0 8l6.5-1.5L8 0Z" />
-    </svg>
-  ),
-};
+function pathMatches(currentPath, matchList, opts = {}) {
+  const { exact = false } = opts;
+  const matches = (matchList?.length ? matchList : []).filter(Boolean);
 
-function isActive(currentPath, item) {
-  const href = item.href;
-  const match = item.match ?? "exact";
-  if (match === "prefix") return currentPath === href || currentPath.startsWith(href + "/");
-  return currentPath === href;
+  if (exact) return matches.some((m) => currentPath === m);
+  return matches.some((m) => currentPath === m || currentPath.startsWith(m + "/"));
 }
 
 export default function NavItem({ item, currentPath, onNavigate }) {
-  const active = isActive(currentPath, item);
-  const Icon = Icons[item.icon] ?? Icons.dashboard;
+  const Icon = item.icon;
+  const href = typeof item.href === "function" ? item.href() : item.href;
 
-  // Etwas kompakter wie im Original
-  const base = "group flex items-center gap-3 rounded-2xl px-3 py-2.5 transition";
-  const stateActive = "bg-white text-gray-900 shadow-[0_12px_30px_rgba(0,0,0,0.08)]";
-  const stateInactive =
-    "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)]";
-  const stateDisabled = "text-gray-300 cursor-not-allowed";
+  const hasChildren = Array.isArray(item.children) && item.children.length > 0;
 
-  /**
-   * 🔧 Hier ist der Kern-Fix:
-   * - Kachel kleiner (h-10 w-10)
-   * - weniger “puffy”: rounded-xl statt rounded-2xl
-   * - Icon selbst bleibt gut sichtbar (h-5 w-5)
-   */
-  const iconWrap =
-    "shrink-0 grid h-10 w-10 place-items-center rounded-xl bg-white border border-white/70 shadow-xs";
-  const iconWrapActive =
-    "bg-gradient-to-br from-brand-500 to-brand-600 border-transparent shadow-md";
+  const childActive = useMemo(() => {
+    if (!hasChildren) return false;
 
-  const iconClass =
-    "h-5 w-5 fill-current " + (active ? "text-white" : "text-gray-500 group-hover:text-gray-700");
+    return item.children.some((c) => {
+      const cHref = typeof c.href === "function" ? c.href() : c.href;
+      return pathMatches(currentPath, c.match || [cHref], { exact: !!c.exact });
+    });
+  }, [hasChildren, item.children, currentPath]);
 
-  const labelClass = "truncate text-[15px] font-semibold";
+  const selfActive = pathMatches(currentPath, item.match || [href], { exact: !!item.exact });
+  const isActive = selfActive || childActive;
 
-  const badge = item.badge ? (
-    <span className="ml-auto rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-600">
-      {item.badge}
-    </span>
-  ) : null;
+  const [open, setOpen] = useState(() => (hasChildren ? isActive : false));
 
-  if (item.disabled) {
-    return (
-      <div className={`${base} ${stateDisabled}`}>
-        <span className={iconWrap}>
-          <Icon className="h-5 w-5 fill-current text-gray-300" />
-        </span>
-        <span className={labelClass}>{item.label}</span>
-        {badge}
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (hasChildren && isActive) setOpen(true);
+  }, [hasChildren, isActive]);
+
+  const rowClass = [
+    "group w-full flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition",
+    isActive
+      ? "bg-white shadow-[0_10px_18px_rgba(0,0,0,0.08)] ring-1 ring-black/5 text-gray-900"
+      : "text-gray-700 hover:bg-gray-50",
+  ].join(" ");
+
+  const iconWrapClass = [
+    "grid h-9 w-9 place-items-center rounded-2xl transition shrink-0",
+    isActive
+      ? "bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-md"
+      : "bg-gray-100 text-gray-600 group-hover:bg-gray-200",
+  ].join(" ");
+
+  // ✅ deine Anpassung beibehalten: gap-5
+  const childLinkClass = (active) =>
+    [
+      "flex items-center gap-5 rounded-xl px-3 py-2 text-sm font-semibold transition",
+      active ? "bg-sky-50 text-slate-900" : "text-slate-400 hover:bg-slate-50",
+    ].join(" ");
 
   return (
-    <Link
-      href={item.href}
-      onClick={onNavigate}
-      className={`${base} ${active ? stateActive : stateInactive}`}
-    >
-      <span className={`${iconWrap} ${active ? iconWrapActive : ""}`}>
-        <Icon className={iconClass} />
-      </span>
-      <span className={labelClass}>{item.label}</span>
-      {badge}
-    </Link>
+    <div className="space-y-1">
+      {/* Parent row */}
+      {hasChildren ? (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className={[rowClass, "justify-between"].join(" ")}
+          aria-expanded={open}
+          aria-label={`${item.label} Untermenü umschalten`}
+        >
+          <span className="flex min-w-0 items-center gap-3">
+            {Icon ? (
+              <span className={iconWrapClass}>
+                <Icon className="h-4 w-4" />
+              </span>
+            ) : null}
+            <span className="truncate">{item.label}</span>
+          </span>
+
+          <ChevronDown
+            className={[
+              "h-4 w-4 shrink-0 transition-transform text-slate-600",
+              open ? "rotate-180" : "",
+            ].join(" ")}
+          />
+        </button>
+      ) : (
+        <Link href={href} onClick={onNavigate} className={rowClass}>
+          {Icon ? (
+            <span className={iconWrapClass}>
+              <Icon className="h-4 w-4" />
+            </span>
+          ) : null}
+          <span className="truncate">{item.label}</span>
+        </Link>
+      )}
+
+      {/* Children */}
+      {hasChildren && open ? (
+        // ✅ HIER stellst du den Abstand des Punktes von links ein:
+        // ml-4 -> ml-5 / ml-6 (weiter nach rechts), oder ml-3 (mehr nach links)
+        <div className="ml-4 space-y-1">
+          {item.children.map((c) => {
+            const cHref = typeof c.href === "function" ? c.href() : c.href;
+            const cActive = pathMatches(currentPath, c.match || [cHref], { exact: !!c.exact });
+
+            return (
+              <Link key={c.label} href={cHref} onClick={onNavigate} className={childLinkClass(cActive)}>
+                {/* kleiner quadratischer Punkt */}
+                <span
+                  className={[
+                    "h-2 w-2 rounded-[2px] shrink-0",
+                    cActive ? "bg-sky-500" : "bg-slate-300",
+                  ].join(" ")}
+                />
+                {/* ✅ deine Anpassung beibehalten */}
+                <span className="truncate ml-2">{c.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }

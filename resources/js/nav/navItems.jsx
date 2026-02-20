@@ -1,49 +1,145 @@
 // resources/js/nav/navItems.jsx
+import {
+  LayoutDashboard,
+  Calendar,
+  MapPin,
+  Tag,
+  ClipboardList,
+  HelpCircle,
+  User,
+  Wrench,
+  BarChart3,
+  PlusCircle,
+  Eye,
+  Users,
+  Compass,
+  Receipt, // ✅ neu
+} from "lucide-react";
 
 export function getNavItems(role = "user") {
-  const nav = [
-    {
-      section: "General",
-      items: [
-        { label: "Dashboard", href: "/dashboard", icon: "dashboard", match: "exact" },
-        { label: "UI Test", href: "/ui-test", icon: "spark", match: "exact" },
-        { label: "FAQ", href: "/faq", icon: "help", match: "exact" },
-      ],
-    },
-    {
-      section: "Bookings",
-      items: [
-        { label: "Übersicht", href: "/bookings", icon: "calendar", match: "prefix" },
-        { label: "Neue Buchung", href: "/bookings/new", icon: "plus", disabled: true, badge: "Soon" },
-        { label: "Archiv", href: "/bookings/archive", icon: "archive", disabled: true, badge: "Soon" },
-      ],
-    },
-  ];
+  const isAdmin = role === "admin";
+  const isHost = role === "host";
 
-  if (role === "host" || role === "admin") {
-    nav.push({
+  const sections = [];
+
+  // ✅ Public Discovery: Veranstaltungen (für alle Rollen)
+  sections.push({
+    section: "Entdecken",
+    items: [
+      {
+        label: "Veranstaltungen",
+        href: "/veranstaltungen",
+        icon: Compass,
+        match: ["/veranstaltungen"],
+      },
+    ],
+  });
+
+  // Buchungen (nur wenn diese URLs existieren)
+  sections.push({
+    section: "Übersicht",
+    items: [
+      { label: "Anmeldungen", href: "/bookings", icon: ClipboardList, match: ["/bookings"] },
+      { label: "Rechnungen", href: "/bookings/archive", icon: Receipt, match: ["/bookings/archive"]},
+
+       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, match: ["/dashboard"] },
+       { label: "Profil", href: "/profile", icon: User, match: ["/profile"] },
+       { label: "FAQ", href: "/faq", icon: HelpCircle, match: ["/faq"] },
+    ],
+  });
+
+  // Host
+  if (isHost) {
+    sections.push({
       section: "Host",
       items: [
-        { label: "Events", href: "/host/events", icon: "events", disabled: true, badge: "Soon" },
-        { label: "Event erstellen", href: "/host/events/create", icon: "plus", disabled: true, badge: "Soon" },
-        { label: "Event verwalten", href: "/host/events/manage", icon: "settings", disabled: true, badge: "Soon" },
-        { label: "Invoicing", href: "/host/invoicing", icon: "invoice", disabled: true, badge: "Soon" },
-        { label: "Locations", href: "/host/locations", icon: "pin", disabled: true, badge: "Soon" },
-        { label: "Location anfragen", href: "/host/locations/request", icon: "mail", disabled: true, badge: "Soon" },
+        {
+          label: "Events",
+          href: "/host/events",
+          icon: Calendar,
+          match: ["/host/events"],
+          children: [
+            { label: "Übersicht", href: "/host/events", match: ["/host/events"], exact: true },
+            { label: "Event anlegen", href: "/host/events/create", match: ["/host/events/create"] },
+          ],
+        },
+        {
+          label: "Locations",
+          href: "/host/locations",
+          icon: MapPin,
+          match: ["/host/locations"],
+          children: [
+            { label: "Übersicht", href: "/host/locations", match: ["/host/locations"], exact: true },
+            { label: "Location anfragen", href: "/host/locations/request", match: ["/host/locations/request"] },
+          ],
+        },
+        {
+          label: "Invoicing",
+          href: "/host/invoicing",
+          icon: BarChart3,
+          match: ["/host/invoicing"],
+        },
       ],
     });
   }
 
-  if (role === "admin") {
-    nav.push({
+  // Admin
+  if (isAdmin) {
+    sections.push({
       section: "Admin",
       items: [
-        { label: "Location hinzufügen", href: "/admin/locations/add", icon: "plus", disabled: true, badge: "Soon" },
-        { label: "Location zuweisen", href: "/admin/locations/assign", icon: "link", disabled: true, badge: "Soon" },
-        { label: "Reporting", href: "/admin/reporting", icon: "chart", disabled: true, badge: "Soon" },
+        { label: "Admin Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, match: ["/admin/dashboard"] },
+
+        {
+          label: "Events",
+          href: "/admin/events",
+          icon: Calendar,
+          match: ["/admin/events"],
+          children: [
+            { label: "Übersicht", href: "/admin/events", match: ["/admin/events"], exact: true },
+            { label: "Event anlegen", href: "/admin/events/create", match: ["/admin/events/create"] },
+          ],
+        },
+
+        {
+          label: "Offers",
+          href: "/admin/offers",
+          icon: Tag,
+          match: ["/admin/offers"],
+          children: [
+            { label: "Übersicht", href: "/admin/offers", match: ["/admin/offers"], exact: true },
+            { label: "Offer anlegen", href: "/admin/offers/create", match: ["/admin/offers/create"] },
+          ],
+        },
+
+        {
+          label: "Locations",
+          href: "/admin/locations",
+          icon: MapPin,
+          match: ["/admin/locations"],
+          children: [
+            { label: "Übersicht", href: "/admin/locations", match: ["/admin/locations"], exact: true },
+            { label: "Location anlegen", href: "/admin/locations/add", match: ["/admin/locations/add"] },
+            { label: "Locations zuweisen", href: "/admin/locations/assign", match: ["/admin/locations/assign"] },
+          ],
+        },
+
+        { label: "Users", href: "/admin/users", icon: Users, match: ["/admin/users"] },
+
+        { label: "Reporting", href: "/admin/reporting", icon: BarChart3, match: ["/admin/reporting"] },
+      ],
+    });
+
+    sections.push({
+      section: "Dev",
+      items: [
+        { label: "UI Test", href: "/ui-test", icon: Wrench, match: ["/ui-test"] },
+        { label: "Dashboard UI", href: "/dashboard-ui", icon: Wrench, match: ["/dashboard-ui"] },
       ],
     });
   }
 
-  return nav;
+  return sections;
 }
+
+export default getNavItems;

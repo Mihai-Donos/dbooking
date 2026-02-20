@@ -1,47 +1,55 @@
 // resources/js/Components/AppShell/TopBar.jsx
-
 import React from "react";
+import UserMenu from "@/Components/AppShell/UserMenu";
+import { PanelLeft } from "lucide-react";
 
-export default function TopBar({ title, role, userName, sidebarOpen, setSidebarOpen }) {
+export default function TopBar({
+  title,
+  user,        // neu
+  role,        // fallback alt
+  userName,    // fallback alt
+  sidebarOpen,
+  setSidebarOpen,
+}) {
+  const effectiveRole = user?.role ?? role ?? "user";
+  const effectiveName = user?.name ?? userName ?? "Guest";
+
   return (
-    <header className="mx-auto max-w-7xl">
-      <div className="soft-glass px-4 py-3 sm:px-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              className="btn bg-white text-gray-700 hover:text-gray-900 lg:hidden"
-              aria-controls="sidebar"
-              aria-expanded={sidebarOpen}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSidebarOpen(!sidebarOpen);
-              }}
-            >
-              ☰
-            </button>
+    <header className="soft-surface px-4 py-3 sm:px-5 sm:py-4">
+      <div className="flex items-center justify-between gap-4">
+        {/* Left */}
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen?.(!sidebarOpen)}
+            className="lg:hidden inline-grid h-10 w-10 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+            aria-label="Menü öffnen"
+          >
+            <PanelLeft className="h-5 w-5" />
+          </button>
 
-            <div className="leading-tight">
-              <div className="text-xs font-bold uppercase tracking-wide text-gray-400">
-                DBOOKING
-              </div>
-              <div className="text-sm font-semibold text-gray-900">{title}</div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-extrabold tracking-wide text-slate-400">
+              buchdeinzimmer.com
+            </div>
+            <div className="truncate text-base font-extrabold text-slate-900">
+              {}
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="hidden sm:inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 shadow-xs">
-              {role}
-            </span>
+        {/* Right */}
+        <div className="flex items-center gap-3">
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-extrabold text-slate-700 ring-1 ring-slate-200">
+            {effectiveRole}
+          </span>
 
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:block text-sm font-semibold text-gray-700">
-                {userName}
-              </span>
-              <span className="grid h-9 w-9 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 text-sm font-extrabold text-white shadow-md">
-                {(userName?.[0] ?? "G").toUpperCase()}
-              </span>
-            </div>
-          </div>
+          <span className="hidden sm:block text-sm font-extrabold text-slate-900">
+            {effectiveName}
+          </span>
+
+          {/* Avatar + Dropdown */}
+          <UserMenu user={user ?? { name: effectiveName, role: effectiveRole }} />
         </div>
       </div>
     </header>

@@ -1,137 +1,105 @@
 // resources/js/Components/AppShell/SideBar.jsx
+import React, { useMemo } from "react";
+import { usePage } from "@inertiajs/react";
+import NavItem from "@/Components/AppShell/NavItem";
 
-import React, { useEffect, useRef } from "react";
-import { Link, usePage } from "@inertiajs/react";
-import NavSection from "@/Components/AppShell/NavSection";
+function sectionTitle(label, role) {
+  const raw = String(label ?? "");
+  const key = raw.trim().toLowerCase();
 
-export default function SideBar({
-  nav,
-  sidebarOpen,
-  setSidebarOpen,
-  sidebarExpanded, // (optional) bleibt kompatibel mit AppShell
-  setSidebarExpanded, // (optional)
-  onNavigate,
-  variant = "default",
-}) {
-  const trigger = useRef(null);
-  const sidebar = useRef(null);
+  // Deine Wunschlogik: Section die "Admin" heißt -> ADMIN oder HOST je nach Rolle
+  if (key === "admin" || key === "host") {
+    return role === "host" ? "HOST" : "ADMIN";
+  }
 
-  const currentPath = usePage().url.split("?")[0];
+  return raw.toUpperCase();
+}
 
-  // Close on click outside (mobile)
-  useEffect(() => {
-    const clickHandler = ({ target }) => {
-      if (!sidebar.current || !trigger.current) return;
-      if (!sidebarOpen) return;
-      if (sidebar.current.contains(target) || trigger.current.contains(target)) return;
-      setSidebarOpen(false);
-    };
-    document.addEventListener("click", clickHandler);
-    return () => document.removeEventListener("click", clickHandler);
-  }, [sidebarOpen, setSidebarOpen]);
+export default function SideBar({ nav = [], sidebarOpen, setSidebarOpen, onNavigate }) {
+  const { url, props } = usePage();
+  const currentPath = useMemo(() => String(url ?? "/").split("?")[0], [url]);
 
-  // Close on ESC (mobile)
-  useEffect(() => {
-    const keyHandler = (e) => {
-      if (!sidebarOpen) return;
-      if (e.key === "Escape") setSidebarOpen(false);
-    };
-    document.addEventListener("keydown", keyHandler);
-    return () => document.removeEventListener("keydown", keyHandler);
-  }, [sidebarOpen, setSidebarOpen]);
+  const role = props?.auth?.user?.role ?? "user";
 
   return (
-    <div className="min-w-fit">
-      {/* Backdrop (mobile only) */}
+    <>
+      {/* Mobile Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-gray-900/30 transition-opacity duration-200 lg:hidden ${
-          sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
-        aria-hidden="true"
+        className={[
+          "fixed inset-0 z-30 bg-black/30 backdrop-blur-[1px] transition-opacity lg:hidden",
+          sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        ].join(" ")}
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar */}
       <aside
-        id="sidebar"
-        ref={sidebar}
-        className={`no-scrollbar fixed left-0 top-0 z-50 flex h-[100dvh] w-72 flex-col overflow-y-auto bg-white px-4 py-5 transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-72"
-        }
-        rounded-r-3xl lg:rounded-3xl
-        border border-white/70
-        shadow-[0_20px_27px_0_rgba(0,0,0,0.06)]
-        ${
-          variant === "default"
-            ? "lg:ml-4 lg:my-4 lg:h-[calc(100dvh-2rem)]"
-            : "lg:h-[100dvh]"
-        }`}
+        className={[
+          "fixed inset-y-0 left-0 z-40 w-[320px] shrink-0",
+          "bg-white/70 backdrop-blur-xl",
+          "border-r border-white/40",
+          "shadow-[0_18px_40px_rgba(15,23,42,0.08)]",
+          "transition-transform duration-200",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          "lg:static lg:translate-x-0",
+          // wichtig: Layout + keine sichtbaren Scrollbars an der Sidebar selbst
+          "h-[100dvh] flex flex-col overflow-hidden",
+        ].join(" ")}
       >
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          {/* Close button (mobile) */}
-          <button
-            ref={trigger}
-            className="text-gray-500 hover:text-gray-700 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-            aria-controls="sidebar"
-            aria-expanded={sidebarOpen}
-          >
-            <span className="sr-only">Close sidebar</span>
-            <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24">
-              <path d="M10.7 18.7l1.4-1.4L7.8 13H20v-2H7.8l4.3-4.3-1.4-1.4L4 12z" />
-            </svg>
-          </button>
-
-          {/* Logo */}
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-3"
-            onClick={onNavigate}
-          >
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 text-sm font-extrabold text-white shadow-md">
+        {/* Header / Brand */}
+        <div className="p-5 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-sky-500 text-white font-extrabold shadow">
               D
             </div>
-            <div className="leading-tight">
-              <div className="text-sm font-extrabold tracking-tight text-gray-900">
-                DBOOKING
-              </div>
-              <div className="text-[11px] font-semibold text-gray-500">
-                Soft UI · BLUE1
-              </div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-extrabold text-slate-900">DBOOKING</div>
+              <div className="truncate text-xs font-semibold text-slate-500">Soft UI · BLUE1</div>
             </div>
-          </Link>
-
-          {/* spacer on desktop */}
-          <div className="hidden lg:block w-6" />
+          </div>
         </div>
 
         {/* Nav */}
-        <nav className="space-y-6">
-          {nav.map((section) => (
-            <NavSection
-              key={section.section}
-              title={section.section}
-              items={section.items}
-              currentPath={currentPath}
-              onNavigate={onNavigate}
-            />
+        <nav
+          className={[
+            // nimmt den Rest der Höhe ein
+            "flex-1 min-h-0",
+            // scrollbar unsichtbar, aber scrollen bleibt möglich
+            "overflow-y-auto overflow-x-hidden",
+            "px-4 pb-6",
+            "[-ms-overflow-style:none]",
+            "[scrollbar-width:none]",
+            "[&::-webkit-scrollbar]:w-0",
+            "[&::-webkit-scrollbar]:h-0",
+            // (optional) verhindert iOS overscroll glow / bouncing
+            "overscroll-contain",
+          ].join(" ")}
+        >
+          {nav.map((sec, idx) => (
+            <div key={`${sec.section ?? "sec"}-${idx}`} className="pt-2">
+              {/* ✅ Soft Divider zwischen Sektionen (nicht vor der ersten) */}
+              {idx > 0 ? <div className="my-5 h-px bg-slate-200/70" /> : null}
+
+              <div className="px-2 pb-2 text-xs font-extrabold tracking-widest text-slate-400">
+                {sectionTitle(sec.section, role)}
+              </div>
+
+              <div className="space-y-2">
+                {(sec.items ?? []).map((item) => (
+                  <NavItem
+                    key={item.href?.toString() ?? item.label}
+                    item={item}
+                    currentPath={currentPath}
+                    onNavigate={() => {
+                      onNavigate?.();
+                      setSidebarOpen(false);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
-
-        {/* Footer (optional) */}
-        <div className="mt-auto pt-6">
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            <div className="text-sm font-semibold text-gray-900">Tip</div>
-            <div className="mt-1 text-sm text-gray-600">
-              Active-State: <span className="font-semibold">weiß + Shadow</span> (Soft-UI).
-            </div>
-          </div>
-
-          {/* Optional: keep compatibility with sidebarExpanded toggle (currently unused visually)
-              If you want a compact mode later, sag Bescheid — dann bauen wir das Soft-UI-compact sauber. */}
-        </div>
       </aside>
-    </div>
+    </>
   );
 }
