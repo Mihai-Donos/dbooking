@@ -11,6 +11,18 @@ class Room extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'location_id',
+        'number',
+        'capacity',
+        'description',
+    ];
+
+    protected $casts = [
+        'number' => 'integer',
+        'capacity' => 'integer',
+    ];
+
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
