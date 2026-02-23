@@ -39,7 +39,7 @@ export function getNavItems(role = "user") {
   sections.push({
     section: "Übersicht",
     items: [
-      { label: "Anmeldungen", href: "/bookings", icon: ClipboardList, match: ["/bookings"] },
+      { label: "Anmeldungen", href: "/anmeldungen/uebersicht", icon: ClipboardList, match: ["/anmeldungen", "/bookings"] },
       { label: "Rechnungen", href: "/bookings/archive", icon: Receipt, match: ["/bookings/archive"]},
 
        { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, match: ["/dashboard"] },

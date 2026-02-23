@@ -54,7 +54,7 @@ Route::middleware('auth')->group(function () {
 // --- App routes (Gerüst) ---
 // User (auth)
 Route::middleware('auth')->group(function () {
-    Route::get('/bookings', fn() => Inertia::render('Bookings/Overview'))->name('bookings.index');
+    Route::get('/bookings', [BookingController::class, 'overview'])->name('bookings.overview');
 
     // New Booking: immer mit Event (aus Veranstaltungen kommt /bookings/new/{event})
     Route::get('/bookings/new/{event}', [BookingController::class, 'create'])->name('bookings.new');
@@ -62,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/events/{event}/bookings/{booking}', [BookingController::class, 'destroy'])->name('bookings.destroy');
 
     Route::get('/anmeldungen/uebersicht', [BookingController::class, 'overview'])->name('bookings.overview');
+
 
     Route::get('/bookings/archive', fn() => Inertia::render('Bookings/Archive'))->name('bookings.archive');
 });

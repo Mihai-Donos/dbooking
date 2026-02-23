@@ -463,7 +463,7 @@ useEffect(() => {
     resetForm();
     setShowForm(false);
     // Redirect auf öffentliche Eventliste
-    router.visit(route("public.veranstaltungen.index"));
+    router.visit(route("bookings.overview"));
   };
 
   const submit = (e) => {

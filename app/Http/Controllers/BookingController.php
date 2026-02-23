@@ -340,6 +340,90 @@ class BookingController extends Controller
         });
     }
 
+    public function overview(Request $request)
+    {
+        $user = $request->user();
+        $cutoff = now()->subMonths(6);
+
+        $bookings = \App\Models\Booking::query()
+            ->where('user_id', $user->id)
+            ->whereHas('event', fn($q) => $q->where('end_date', '>=', $cutoff))
+            ->with([
+                'event.location:id,name',
+                'room:id,number',
+            ])
+            ->orderByDesc('from_date')
+            ->get();
+
+        $groups = $bookings->groupBy('event_id')->map(function ($rows) {
+            $event = $rows->first()->event;
+            $statusEnum = $event->status instanceof \App\Enums\EventStatus ? $event->status : null;
+
+            $canEdit = ($statusEnum?->value ?? (int) $event->getRawOriginal('status'))
+                === \App\Enums\EventStatus::RegistrationOpen->value;
+
+            return [
+                'event' => [
+                    'id' => $event->id,
+                    'name' => $event->name,
+                    'start_date' => optional($event->start_date)->toDateTimeString(),
+                    'end_date' => optional($event->end_date)->toDateTimeString(),
+                    'status' => $statusEnum?->value ?? (int) $event->getRawOriginal('status'),
+                    'status_label' => $statusEnum?->label() ?? \App\Enums\EventStatus::Preparation->label(),
+                    'requires_room_assignment' => (bool) $event->requires_room_assignment,
+                    'location' => $event->location ? [
+                        'id' => $event->location->id,
+                        'name' => $event->location->name,
+                    ] : null,
+                    'can_edit' => $canEdit,
+
+                    // ✅ NEU: Summen/Anzahl für Header
+                    'booking_count' => $rows->count(),
+                    'total_amount' => (string) $rows->sum(fn($b) => (float) $b->total_amount),
+                ],
+
+                'bookings' => $rows->map(function ($b) {
+                    $statusEnum = $b->status; // BookingStatus (cast) oder null
+    
+                    return [
+                        'id' => $b->id,
+                        'customer_name' => $b->customer_name,
+                        'from_date' => optional($b->from_date)->toDateTimeString(),
+                        'to_date' => optional($b->to_date)->toDateTimeString(),
+                        'nights' => (int) $b->nights,
+                        'total_amount' => (string) $b->total_amount,
+                        'status' => $statusEnum?->value ?? (int) $b->getRawOriginal('status'),
+                        'status_label' => $statusEnum?->label() ?? 'In Bearbeitung',
+                        'glutenfree' => (bool) $b->glutenfree,
+                        'vegetarian' => (bool) $b->vegetarian,
+                        'lactose_free' => (bool) $b->lactose_free,
+                        'single_room' => (bool) $b->single_room,
+                        'baby_bed' => (bool) $b->baby_bed,
+                        'room' => $b->room ? [
+                            'id' => $b->room->id,
+                            'number' => $b->room->number,
+                        ] : null,
+
+                        // per_booking Items (Pauschalen)
+                        'per_booking_items' => $b->items
+                                ?->filter(fn($it) => (int) $it->charge_type === \App\Enums\OfferChargeType::PER_BOOKING->value)
+                            ->values()
+                            ->map(fn($it) => [
+                                'id' => $it->id,
+                                'name' => $it->name,
+                                'line_total' => (string) $it->line_total,
+
+                            ]),
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        return \Inertia\Inertia::render('Bookings/Overview', [
+            'groups' => $groups,
+        ]);
+    }
+
 
     public function destroy(Request $request, Event $event, Booking $booking)
     {
