@@ -22,6 +22,7 @@ class Offer extends Model
     protected $casts = [
         'type' => OfferType::class,
         'charge_type' => OfferChargeType::class,
+        'is_host_only' => 'bool',
     ];
 
     public function eventOffers(): HasMany

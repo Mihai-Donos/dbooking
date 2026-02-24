@@ -61,6 +61,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/bookings/new/{event}', [BookingController::class, 'store'])->name('bookings.store');
     Route::delete('/events/{event}/bookings/{booking}', [BookingController::class, 'destroy'])->name('bookings.destroy');
 
+    Route::get('/events/{event}/bookings/{booking}/edit', [BookingController::class, 'edit'])->name('bookings.edit');
+    Route::put('/events/{event}/bookings/{booking}', [BookingController::class, 'update'])->name('bookings.update');
+
     Route::get('/anmeldungen/uebersicht', [BookingController::class, 'overview'])->name('bookings.overview');
 
 
@@ -77,6 +80,11 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
         Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
+
+        // Edit der Buchungen aus dem Overview
+        Route::get('/events/{event}/bookings/{booking}/edit', [BookingController::class, 'edit'])->name('bookings.edit');
+        Route::put('/events/{event}/bookings/{booking}', [BookingController::class, 'update'])->name('bookings.update');
+
         Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
 
         Route::get('/invoicing', fn() => Inertia::render('Host/Invoicing'));

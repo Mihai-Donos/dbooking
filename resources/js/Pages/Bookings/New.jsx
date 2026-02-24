@@ -1,4 +1,4 @@
-// resources/js/Pages/Bookings/New2.jsx
+// resources/js/Pages/Bookings/New.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Head, useForm, router } from "@inertiajs/react";
 import AppShell from "@/Layouts/AppShell";
@@ -305,6 +305,12 @@ const availableToSlots = useMemo(() => {
     [perDayOffers, data.per_day.offer_id]
   );
 
+  // direkt nach const perBookingOffers = normalizedOffers.perBooking;
+  const userPerBookingOffers = useMemo(
+    () => (perBookingOffers || []).filter((o) => !o.host_only),
+    [perBookingOffers]
+  );
+
   const perBookingSelected = useMemo(() => {
     const set = new Set((data.per_booking || []).map((x) => Number(x)));
     return perBookingOffers.filter((o) => set.has(Number(o.id)));
@@ -317,7 +323,7 @@ const availableToSlots = useMemo(() => {
   const allowBabyBed = isBaby || isKleinkind; // Erwachsener -> false
 
 
-  // hier XDT
+
 
   // ✅ Nur bereinigen (nie automatisch aktivieren)
 useEffect(() => {
@@ -459,12 +465,28 @@ useEffect(() => {
     scrollToName();
   };
 
+  const handleCancelForm = () => {
+    // Formular zurücksetzen
+    resetForm();
+  
+    // Formular ausblenden
+    setShowForm(false);
+  
+    // Buchungsübersicht wieder anzeigen
+    setBookingsOpen(hasBookings);
+  
+    // Zeitraum einklappen
+    setPeriodExpanded(false);
+  };
+
   const handleFinish = () => {
     resetForm();
     setShowForm(false);
     // Redirect auf öffentliche Eventliste
     router.visit(route("bookings.overview"));
   };
+
+
 
   const submit = (e) => {
     e.preventDefault();
@@ -514,7 +536,7 @@ useEffect(() => {
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3">
         {user_event_bookings.length === 0 ? (
-          <div className="text-sm text-slate-600">Keine Buchungen vorhanden.</div>
+          <div className="text-sm text-slate-600">Keine Anmeldungen vorhanden.</div>
         ) : (
           user_event_bookings.map((b) => (
             <div
@@ -576,7 +598,7 @@ useEffect(() => {
               <div className="text-lg font-semibold text-slate-900 tabular-nums">
                 {formatEuro(user_event_total_amount)} €
               </div>
-              <div className="text-xs text-slate-500">Summe deiner Buchungen</div>
+              <div className="text-xs text-slate-500">Anmeldungen gesamt</div>
             </div>
 
             <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-xl bg-brand-500 px-2 text-sm font-bold text-white shadow-xs">
@@ -585,7 +607,7 @@ useEffect(() => {
 
             <button
               type="button"
-              className="icon-btn icon-btn--edit"
+              className="icon-btn icon-btn--edit border-slate-300 hover:border-slate-400"
               aria-label={bookingsOpen ? "Buchungen einklappen" : "Buchungen ausklappen"}
               onClick={() => setBookingsOpen((v) => !v)}
             >
@@ -868,7 +890,7 @@ useEffect(() => {
                 <div className="text-sm text-slate-600">Keine einmaligen Buchungspositionen verfügbar.</div>
               ) : (
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  {perBookingOffers.map((o) => {
+                  {userPerBookingOffers.map((o) => {
                     const checked = (data.per_booking || []).map(Number).includes(Number(o.id));
                     return (
                       <label
@@ -884,7 +906,9 @@ useEffect(() => {
                           />
                           <span className="font-semibold text-slate-900">{o.name}</span>
                         </span>
-                        <span className="font-semibold text-slate-900">{formatEuro(o.price)} €</span>
+                        <span className="font-semibold text-slate-900">
+                          {formatEuro(o.price)} €
+                        </span>
                       </label>
                     );
                   })}
@@ -898,6 +922,10 @@ useEffect(() => {
           <div className="soft-surface p-6">
             <div className="flex flex-wrap justify-end gap-6 items-end">
               <div className="order-2 w-full sm:order-1 sm:w-auto sm:mr-1 self-end">
+                <button type="button" className="btn btn-secondary w-full sm:w-auto" onClick={handleCancelForm}>
+                  Abbrechen
+                </button>
+                
                 <button type="submit" disabled={processing} className="btn btn-primary w-full sm:w-auto">
                   Person anmelden
                 </button>

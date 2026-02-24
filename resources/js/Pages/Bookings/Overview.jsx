@@ -155,7 +155,7 @@ export default function Overview({ groups = [] }) {
                   <div className="text-xs text-slate-500">Event</div>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <div className="text-lg font-semibold text-slate-900">{e.name}</div>
-                    {e.status_label ? <span className={badgeClass(e.status_label)}>{e.status_label}</span> : null}
+                   
                   </div>
                       {/* Desktop einzeilig */}
                       <div className="hidden sm:block mt-1 text-sm text-slate-600">
@@ -200,7 +200,7 @@ export default function Overview({ groups = [] }) {
                 {/* Chevron darunter */}
                 <button
                   type="button"
-                  className="icon-btn icon-btn--edit"
+                  className="icon-btn icon-btn--edit border-slate-300 hover:border-slate-400"
                   aria-label={isOpen ? "Einklappen" : "Ausklappen"}
                   onClick={() => toggle(e.id)}
                 >
@@ -329,7 +329,7 @@ export default function Overview({ groups = [] }) {
                                 type="button"
                                 className="icon-btn icon-btn--edit"
                                 aria-label="Bearbeiten"
-                                onClick={() => alert("Edit-Route kommt als nächstes (sauberer Workflow).")}
+                                onClick={() => router.get(route("bookings.edit", [e.id, b.id]))}
                               >
                                 <Pencil className="h-4 w-4" />
                               </button>
@@ -357,10 +357,10 @@ export default function Overview({ groups = [] }) {
                             <div className="w-full mt-3 pt-3 border-t border-slate-200/70">
                               <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
                                 <ReceiptText className="h-4 w-4" />
-                                Pauschalen
+                                Enthaltene Pauschalen
                               </div>
 
-                              <div className="mt-2 space-y-1 text-sm text-slate-600">
+                              <div className="mt-2 space-y-1 md:pr-23 text-sm text-slate-600">
                                 {items.map((it) => (
                                   <div key={it.id} className="flex items-center justify-between gap-3">
                                     <span className="truncate">{it.name}</span>

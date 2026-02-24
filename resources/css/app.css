@@ -68,6 +68,13 @@
     @apply bg-gray-50 text-gray-800;
   }
 
+  /* iOS Zoom-Fix: Eingabefelder mindestens 16px */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
   /*
     Tailwind v4 border compatibility:
     keep old look for elements without explicit border color utilities.
