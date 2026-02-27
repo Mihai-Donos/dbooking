@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\EventStatus;
 use App\Enums\OfferChargeType;
+use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\Event;

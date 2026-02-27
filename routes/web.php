@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Public\VeranstaltungController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\Host\HostEventBookingController;
 
 
 Route::get('/', function () {
@@ -80,6 +81,9 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
         Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
+
+        Route::get('/events/{event}/bookings', [HostEventBookingController::class, 'index'])
+            ->name('events.bookings');
 
         // Edit der Buchungen aus dem Overview
         Route::get('/events/{event}/bookings/{booking}/edit', [BookingController::class, 'edit'])->name('bookings.edit');
