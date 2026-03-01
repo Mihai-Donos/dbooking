@@ -1,5 +1,5 @@
 // resources/js/Pages/Host/EventBookings/Index.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Head, Link } from "@inertiajs/react";
 import AppShell from "@/Layouts/AppShell";
 import {
@@ -54,7 +54,16 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
   const [sortBy, setSortBy] = useState(null); // 'person' | 'room' | null
   const [sortDir, setSortDir] = useState("asc"); // 'asc' | 'desc'
 
+  // Slider-Thumb: Position + Breite
+  const sliderRef = useRef(null);
+  const [thumbRect, setThumbRect] = useState({ left: 0, width: 0 });
+
   const total = summary.bookings_count ?? bookings.length;
+
+  // aktuell ausgewählten Tab-Index berechnen
+  const activeIndex = STATUS_TABS.findIndex((t) => t.key === statusFilter);
+  // Fallback, falls irgendwas schiefgeht
+  const safeActiveIndex = activeIndex === -1 ? 0 : activeIndex;
 
   // Counts je Status
   const statusCounts = useMemo(() => {
@@ -67,6 +76,26 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
 
     return base;
   }, [bookings]);
+
+  useEffect(() => {
+    const container = sliderRef.current;
+    if (!container) return;
+  
+    // Aktiven Button anhand des Status-Keys finden
+    const activeBtn = container.querySelector(
+      `button[data-status-key="${statusFilter}"]`
+    );
+    if (!activeBtn) return;
+  
+    const cRect = container.getBoundingClientRect();
+    const bRect = activeBtn.getBoundingClientRect();
+  
+    setThumbRect({
+      left: bRect.left - cRect.left,
+      width: bRect.width,
+    });
+  }, [statusFilter, bookings.length]); // bei Status-Wechsel / anderer Anzahl neu messen
+
 
   const handleSort = (field, dir) => {
     setSortBy(field);
@@ -147,53 +176,66 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
     >
       <Head title="Anmeldungen verwalten" />
 
-      {/* Event-Kopf */}
-      <section className="soft-surface p-6 space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          {/* Linke Seite: Event-Info */}
-          <div className="min-w-0 space-y-1">
-            <div className="text-xs text-slate-500">Event</div>
-            <div className="text-lg font-semibold text-slate-900 truncate">
-              {event?.name ?? "—"}
-            </div>
-            {event?.description ? (
-              <div className="text-sm text-slate-600 line-clamp-2">
-                {event.description}
-              </div>
-            ) : null}
-
-            {/* Ort + Zeitraum wie im bestehenden Design */}
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
-              {event?.location?.name && (
-                <span>
-                  <span className="text-slate-500">Ort:</span>{" "}
-                  <span className="font-semibold text-slate-900">
-                    {event.location.name}
-                  </span>
-                </span>
-              )}
-              <span>
-                <span className="text-slate-500">Zeitraum:</span>{" "}
-                <span className="font-semibold text-slate-900">
-                  {formatDateTime(event.start_date)} –{" "}
-                  {formatDateTime(event.end_date)}
-                </span>
-              </span>
-            </div>
+{/* Event-Kopf + Tabelle in EINER Card */}
+<section className="soft-surface p-0">
+  {/* Header-Bereich */}
+  <div className="px-6 pt-6 pb-4">
+    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between py-4">
+      {/* Linke Seite: Event-Info */}
+      <div className="min-w-0 space-y-1">
+        <div className="text-xs text-slate-500">Event</div>
+        <div className="text-lg font-semibold text-slate-900 truncate">
+          {event?.name ?? "—"}
+        </div>
+        {event?.description ? (
+          <div className="text-sm text-slate-600 line-clamp-2">
+            {event.description}
           </div>
+        ) : null}
 
-          {/* Rechte Seite: Summary + Status-Slider */}
-          <div className="flex flex-col items-end gap-3">
-            {/* Gesamt-Anmeldungen */}
-            <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-xs">
-              <UserCheck className="h-4 w-4 text-slate-500" />
-              <span className="text-sm font-semibold text-slate-900">
-                {total} {total === 1 ? "Anmeldung" : "Anmeldungen"}
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
+          {event?.location?.name && (
+            <span>
+              <span className="text-slate-500">Ort:</span>{" "}
+              <span className="font-semibold text-slate-900">
+                {event.location.name}
               </span>
-            </div>
+            </span>
+          )}
+          <span>
+            <span className="text-slate-500">Zeitraum:</span>{" "}
+            <span className="font-semibold text-slate-900">
+              {formatDateTime(event.start_date)} –{" "}
+              {formatDateTime(event.end_date)}
+            </span>
+          </span>
+        </div>
+      </div>
+
+      {/* Rechte Seite: Summary + Slider */}
+      <div className="flex flex-col items-end gap-5">
+        {/* Gesamt-Anmeldungen */}
+        <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-xs">
+          <UserCheck className="h-4 w-4 text-slate-500" />
+          <span className="text-sm font-semibold text-slate-900">
+            {total} {total === 1 ? "Anmeldung" : "Anmeldungen"}
+          </span>
+        </div>
 
             {/* Status-Slider */}
-            <div className="inline-flex rounded-full bg-slate-50 px-1 py-1 shadow-inner">
+            <div
+              ref={sliderRef}
+              className="relative inline-flex shrink-0 rounded-full bg-slate-100/80 py-1 px-1 shadow-inner overflow-hidden"
+            >
+              {/* Thumb richtet sich nach dem aktiven Button */}
+              <div
+                className="pointer-events-none absolute top-1 bottom-1 rounded-full bg-white shadow-sm transition-all duration-200 ease-out"
+                style={{
+                  left: thumbRect.left,
+                  width: thumbRect.width,
+                }}
+              />
+
               {STATUS_TABS.map((tab) => {
                 const active = statusFilter === tab.key;
                 const count = statusCounts[tab.key] ?? 0;
@@ -202,11 +244,12 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
                   <button
                     key={tab.key}
                     type="button"
+                    data-status-key={tab.key}
                     onClick={() => setStatusFilter(tab.key)}
                     className={[
-                      "relative inline-flex items-center justify-center rounded-full px-4 py-1.5 text-xs font-semibold transition",
+                      "relative z-10 inline-flex flex-1 items-center justify-center rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition",
                       active
-                        ? "bg-white text-slate-900 shadow-sm"
+                        ? "text-slate-900"
                         : "text-slate-500 hover:text-slate-700",
                     ].join(" ")}
                   >
@@ -218,12 +261,15 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
                 );
               })}
             </div>
+
           </div>
         </div>
-      </section>
+ 
+   {/* Divider OBEN für den Tabellenbereich */}
+   <div className="border-t border-slate-100 py-3" />
 
       {/* Tabelle mit Buchungen */}
-      <section className="mt-6 soft-surface p-6">
+
         <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white">
           <table className="min-w-full text-sm">
             <thead className="bg-sky-50/60 text-slate-700">
@@ -413,7 +459,9 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
             </tbody>
           </table>
         </div>
-      </section>
+      
+  </div>
+</section>
     </AppShell>
   );
 }
