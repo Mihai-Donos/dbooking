@@ -5,10 +5,10 @@ import AppShell from "@/Layouts/AppShell";
 import {
   ArrowLeft,
   BedSingle,
-  Baby,
   User,
   UserCheck,
   Triangle,
+  Search,
 } from "lucide-react";
 
 function formatDateTime(v) {
@@ -49,21 +49,39 @@ const STATUS_TABS = [
   { key: "cancelled", label: "Storniert" },
 ];
 
-export default function EventBookingsIndex({ event, bookings = [], summary = {} }) {
+export default function EventBookingsIndex({
+  event,
+  bookings = [],
+  summary = {},
+}) {
   const [statusFilter, setStatusFilter] = useState("in_progress");
   const [sortBy, setSortBy] = useState(null); // 'person' | 'room' | null
   const [sortDir, setSortDir] = useState("asc"); // 'asc' | 'desc'
-
-  // Slider-Thumb: Position + Breite
-  const sliderRef = useRef(null);
-  const [thumbRect, setThumbRect] = useState({ left: 0, width: 0 });
+  const [search, setSearch] = useState("");
 
   const total = summary.bookings_count ?? bookings.length;
 
-  // aktuell ausgewählten Tab-Index berechnen
-  const activeIndex = STATUS_TABS.findIndex((t) => t.key === statusFilter);
-  // Fallback, falls irgendwas schiefgeht
-  const safeActiveIndex = activeIndex === -1 ? 0 : activeIndex;
+  // Slider-Thumb: Position + Breite (misst den aktiven Button)
+  const sliderRef = useRef(null);
+  const [thumbRect, setThumbRect] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    const container = sliderRef.current;
+    if (!container) return;
+
+    const activeBtn = container.querySelector(
+      `button[data-status-key="${statusFilter}"]`
+    );
+    if (!activeBtn) return;
+
+    const cRect = container.getBoundingClientRect();
+    const bRect = activeBtn.getBoundingClientRect();
+
+    setThumbRect({
+      left: bRect.left - cRect.left + 2, // leichter Innenabstand
+      width: bRect.width - 4,
+    });
+  }, [statusFilter, bookings.length]);
 
   // Counts je Status
   const statusCounts = useMemo(() => {
@@ -76,26 +94,6 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
 
     return base;
   }, [bookings]);
-
-  useEffect(() => {
-    const container = sliderRef.current;
-    if (!container) return;
-  
-    // Aktiven Button anhand des Status-Keys finden
-    const activeBtn = container.querySelector(
-      `button[data-status-key="${statusFilter}"]`
-    );
-    if (!activeBtn) return;
-  
-    const cRect = container.getBoundingClientRect();
-    const bRect = activeBtn.getBoundingClientRect();
-  
-    setThumbRect({
-      left: bRect.left - cRect.left,
-      width: bRect.width,
-    });
-  }, [statusFilter, bookings.length]); // bei Status-Wechsel / anderer Anzahl neu messen
-
 
   const handleSort = (field, dir) => {
     setSortBy(field);
@@ -112,12 +110,35 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
   };
 
   const filteredAndSortedBookings = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
     // 1. nach Status filtern
-    const filtered = bookings.filter(
+    let filtered = bookings.filter(
       (b) => bookingStatusKey(b) === statusFilter
     );
 
-    // 2. sortieren (optional)
+    // 2. optional nach Suchbegriff filtern
+    if (term) {
+      filtered = filtered.filter((b) => {
+        const extras = (b.per_booking_items || [])
+          .map((x) => x.name)
+          .join(" ");
+
+        const haystack = [
+          b.customer_name,
+          b.user?.email,
+          b.room?.number,
+          extras,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(term);
+      });
+    }
+
+    // 3. sortieren (optional)
     if (!sortBy) return filtered;
 
     const sorted = [...filtered].sort((a, b) => {
@@ -158,7 +179,7 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
     });
 
     return sorted;
-  }, [bookings, sortBy, sortDir, statusFilter]);
+  }, [bookings, statusFilter, search, sortBy, sortDir]);
 
   return (
     <AppShell
@@ -176,56 +197,81 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
     >
       <Head title="Anmeldungen verwalten" />
 
-{/* Event-Kopf + Tabelle in EINER Card */}
-<section className="soft-surface p-0">
-  {/* Header-Bereich */}
-  <div className="px-6 pt-6 pb-4">
-    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between py-4">
-      {/* Linke Seite: Event-Info */}
-      <div className="min-w-0 space-y-1">
-        <div className="text-xs text-slate-500">Event</div>
-        <div className="text-lg font-semibold text-slate-900 truncate">
-          {event?.name ?? "—"}
-        </div>
-        {event?.description ? (
-          <div className="text-sm text-slate-600 line-clamp-2">
-            {event.description}
+      {/* Event-Kopf + Tabelle in EINER Card */}
+      <section className="soft-surface p-0">
+        {/* Header-Bereich */}
+        <div className="px-6 pt-6 pb-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            {/* Linke Seite: Event-Info */}
+            <div className="min-w-0 space-y-1">
+              <div className="text-xs text-slate-500">Event</div>
+              <div className="text-lg font-semibold text-slate-900 truncate">
+                {event?.name ?? "—"}
+              </div>
+              {event?.description ? (
+                <div className="text-sm text-slate-600 line-clamp-2">
+                  {event.description}
+                </div>
+              ) : null}
+
+              {/* Ort + Zeitraum (wie bisher) */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
+                {event?.location?.name && (
+                  <span>
+                    <span className="text-slate-500">Ort:</span>{" "}
+                    <span className="font-semibold text-slate-900">
+                      {event.location.name}
+                    </span>
+                  </span>
+                )}
+                <span>
+                  <span className="text-slate-500">Zeitraum:</span>{" "}
+                  <span className="font-semibold text-slate-900">
+                    {formatDateTime(event.start_date)} –{" "}
+                    {formatDateTime(event.end_date)}
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            {/* Rechte Seite: Summary */}
+            <div className="flex flex-col items-end gap-5">
+              <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-xs">
+                <UserCheck className="h-4 w-4 text-slate-500" />
+                <span className="text-sm font-semibold text-slate-900">
+                  {total} {total === 1 ? "Anmeldung" : "Anmeldungen"}
+                </span>
+              </div>
+            </div>
           </div>
-        ) : null}
+        </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
-          {event?.location?.name && (
-            <span>
-              <span className="text-slate-500">Ort:</span>{" "}
-              <span className="font-semibold text-slate-900">
-                {event.location.name}
+        {/* Divider zwischen Header und Tabelle */}
+        <div className="border-t border-slate-100" />
+
+        {/* Suchfeld + Status-Slider in EINER Zeile */}
+        <div className="px-6 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          {/* Suchfeld links */}
+          <div className="w-full md:w-96">
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                <Search className="h-4 w-4 text-slate-400" />
               </span>
-            </span>
-          )}
-          <span>
-            <span className="text-slate-500">Zeitraum:</span>{" "}
-            <span className="font-semibold text-slate-900">
-              {formatDateTime(event.start_date)} –{" "}
-              {formatDateTime(event.end_date)}
-            </span>
-          </span>
-        </div>
-      </div>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Person, E-Mail, Zimmer…"
+                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-1.5 text-[16px] text-slate-900 shadow-sm outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+              />
+            </div>
+          </div>
 
-      {/* Rechte Seite: Summary + Slider */}
-      <div className="flex flex-col items-end gap-5">
-        {/* Gesamt-Anmeldungen */}
-        <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-xs">
-          <UserCheck className="h-4 w-4 text-slate-500" />
-          <span className="text-sm font-semibold text-slate-900">
-            {total} {total === 1 ? "Anmeldung" : "Anmeldungen"}
-          </span>
-        </div>
-
-            {/* Status-Slider */}
+          {/* Status-Slider rechts */}
+          <div className="flex justify-start md:justify-end">
             <div
               ref={sliderRef}
-              className="relative inline-flex shrink-0 rounded-full bg-slate-100/80 py-1 px-1 shadow-inner overflow-hidden"
+              className="relative inline-flex shrink-0 rounded-full bg-slate-100/80 px-1 py-1 shadow-inner overflow-hidden"
             >
               {/* Thumb richtet sich nach dem aktiven Button */}
               <div
@@ -261,207 +307,250 @@ export default function EventBookingsIndex({ event, bookings = [], summary = {} 
                 );
               })}
             </div>
-
           </div>
         </div>
- 
-   {/* Divider OBEN für den Tabellenbereich */}
-   <div className="border-t border-slate-100 py-3" />
 
-      {/* Tabelle mit Buchungen */}
-
-        <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white">
-          <table className="min-w-full text-sm">
-            <thead className="bg-sky-50/60 text-slate-700">
-              <tr>
-                {/* Person + Sort */}
-                <th className="px-4 py-3 text-left font-semibold">
+        {/* Tabellenbereich */}
+        <div className="px-6 pb-4">
+          <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white">
+            <table className="min-w-full text-sm">
+              <thead className="bg-sky-50/60 text-slate-700">
+                <tr>
+                  {/* Person + Sort */}
+                  <th className="px-4 py-3 text-left font-semibold">
                     <div className="flex items-center gap-1">
-                        <span>Person</span>
-                        <div className="flex items-center gap-[2px]">
+                      <span>Person</span>
+                      <div className="flex items-center gap-[2px]">
                         <button
-                            type="button"
-                            aria-label="Nach Name aufsteigend sortieren"
-                            onClick={() => handleSort("person", "asc")}>
-                            <Triangle className={sortIconClass("person", "asc")} />
+                          type="button"
+                          aria-label="Nach Name aufsteigend sortieren"
+                          onClick={() => handleSort("person", "asc")}
+                        >
+                          <Triangle
+                            className={sortIconClass("person", "asc")}
+                          />
                         </button>
                         <button
-                            type="button"
-                            aria-label="Nach Name absteigend sortieren"
-                            onClick={() => handleSort("person", "desc")}>
-                            <Triangle className={sortIconClass("person", "desc")} />
+                          type="button"
+                          aria-label="Nach Name absteigend sortieren"
+                          onClick={() => handleSort("person", "desc")}
+                        >
+                          <Triangle
+                            className={sortIconClass("person", "desc")}
+                          />
                         </button>
-                        </div>
+                      </div>
                     </div>
-                </th>
+                  </th>
 
-                <th className="px-4 py-3 text-left font-semibold">Zeitraum</th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Zeitraum
+                  </th>
 
-                {/* Zimmer + Sort */}
-                <th className="px-4 py-3 text-left font-semibold">
+                  {/* Zimmer + Sort */}
+                  <th className="px-4 py-3 text-left font-semibold">
                     <div className="flex items-center gap-1">
-                        <span>Zimmer</span>
-                        <div className="flex items-center gap-[2px]">
+                      <span>Zimmer</span>
+                      <div className="flex items-center gap-[2px]">
                         <button
-                            type="button"
-                            aria-label="Nach Zimmernummer aufsteigend sortieren"
-                            onClick={() => handleSort("room", "asc")}
+                          type="button"
+                          aria-label="Nach Zimmernummer aufsteigend sortieren"
+                          onClick={() => handleSort("room", "asc")}
                         >
-                            <Triangle className={sortIconClass("room", "asc")} />
+                          <Triangle
+                            className={sortIconClass("room", "asc")}
+                          />
                         </button>
                         <button
-                            type="button"
-                            aria-label="Nach Zimmernummer absteigend sortieren"
-                            onClick={() => handleSort("room", "desc")}
+                          type="button"
+                          aria-label="Nach Zimmernummer absteigend sortieren"
+                          onClick={() => handleSort("room", "desc")}
                         >
-                            <Triangle className={sortIconClass("room", "desc")} />
+                          <Triangle
+                            className={sortIconClass("room", "desc")}
+                          />
                         </button>
-                        </div>
+                      </div>
                     </div>
-                </th>
+                  </th>
 
-                <th className="px-4 py-3 text-left font-semibold">Status</th>
-                <th className="px-4 py-3 text-right font-semibold">Betrag</th>
-                <th className="px-4 py-3 text-right font-semibold w-40">
-                  Aktionen
-                </th>
-              </tr>
-            </thead>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-right font-semibold">
+                    Betrag
+                  </th>
+                  <th className="px-4 py-3 text-right font-semibold w-40">
+                    Aktionen
+                  </th>
+                </tr>
+              </thead>
 
-            <tbody className="divide-y divide-slate-100">
-              {filteredAndSortedBookings.map((b) => {
-                const extras = b.per_booking_items || [];
+              <tbody className="divide-y divide-slate-100">
+                {filteredAndSortedBookings.map((b) => {
+                  const extras = b.per_booking_items || [];
 
-                return (
-                  <tr key={b.id} className="hover:bg-sky-50/40">
-                    {/* Person */}
-                    <td className="px-4 py-3 align-top">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-0.5">
-                          <User className="h-4 w-4 text-slate-400" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-slate-900 truncate">
-                            {b.customer_name || "—"}
+                  return (
+                    <tr key={b.id} className="hover:bg-sky-50/40">
+                      {/* Person */}
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex items-start gap-2">
+                          <div className="mt-0.5">
+                            <User className="h-4 w-4 text-slate-400" />
                           </div>
-                          <div className="text-xs text-slate-500 truncate">
-                            {b.user?.email ?? "—"}
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-900 truncate">
+                              {b.customer_name || "—"}
+                            </div>
+                            <div className="text-xs text-slate-500 truncate">
+                              {b.user?.email ?? "—"}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Zeitraum */}
-                    <td className="px-4 py-3 align-top text-slate-700">
-                      <div className="grid grid-cols-[2.5rem_1fr] gap-x-2 gap-y-1">
-                        <div className="text-xs font-semibold text-slate-600">
-                          Von
-                        </div>
-                        <div className="tabular-nums">
-                          {formatDateTime(b.from_date)}
-                        </div>
-                        <div className="text-xs font-semibold text-slate-600">
-                          Bis
-                        </div>
-                        <div className="tabular-nums">
-                          {formatDateTime(b.to_date)}
-                        </div>
-                      </div>
+                      {/* Zeitraum + Extras + Nächte */}
+                      <td className="px-4 py-3 align-top text-slate-700">
+                        <div className="space-y-1 text-xs">
+                          {/* Von */}
+                          <div className="flex items-baseline gap-2">
+                            <div className="w-12 font-semibold text-slate-600">
+                              Von
+                            </div>
+                            <div className="tabular-nums text-slate-700">
+                              {formatDateTime(b.from_date)}
+                            </div>
+                          </div>
 
-                      <div className="mt-1 text-xs text-slate-500 pl-12">
-                        {b.nights} {b.nights === 1 ? "Nacht" : "Nächte"}
-                      </div>
-                    </td>
+                          {/* Bis */}
+                          <div className="flex items-baseline gap-2">
+                            <div className="w-12 font-semibold text-slate-600">
+                              Bis
+                            </div>
+                            <div className="tabular-nums text-slate-700">
+                              {formatDateTime(b.to_date)}
+                            </div>
+                          </div>
 
-                    {/* Zimmer + Optionen + Pauschalen */}
-                    <td className="px-4 py-3 align-top text-slate-700">
-                      <div className="flex items-center gap-2">
-                        <BedSingle className="h-4 w-4 text-slate-500" />
-                        <span>
-                          {b.room?.number
-                            ? `Zimmer ${b.room.number}`
-                            : "Noch nicht zugewiesen"}
-                        </span>
-                      </div>
+                          {/* Extras zuerst (falls vorhanden) */}
+                          {extras.length > 0 && (
+                            <div className="flex items-baseline gap-2">
+                              <div className="w-12 font-semibold text-slate-600">
+                                Extras
+                              </div>
+                              <div className="text-slate-500 truncate">
+                                {extras.map((x) => x.name).join(" • ")}
+                              </div>
+                            </div>
+                          )}
 
-                      {/* Optionen: Einzelzimmer / Babybett */}
-                      <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
-                      {(b.single_room || b.baby_bed) && (
-                        <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
+                          {/* Danach Nächte */}
+                          <div className="flex items-baseline gap-2">
+                            <div className="w-12 font-semibold text-slate-600" />
+                            <div className="text-slate-500">
+                              {b.nights}{" "}
+                              {b.nights === 1 ? "Nacht" : "Nächte"}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Zimmer + Optionen */}
+                      <td className="px-4 py-3 align-top text-slate-700">
+                        <div className="flex items-center gap-2">
+                          <BedSingle className="h-4 w-4 text-slate-500" />
+                          <span>
+                            {b.room?.number
+                              ? `Zimmer ${b.room.number}`
+                              : "Noch nicht zugewiesen"}
+                          </span>
+                        </div>
+
+                        {/* Optionen: Einzelzimmer / Babybett */}
+                        {(b.single_room || b.baby_bed) && (
+                          <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
                             {b.single_room && (
-                            <span
+                              <span
                                 className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-700"
-                                title="Einzelzimmer">
+                                title="Einzelzimmer"
+                              >
                                 Einzelzimmer
-                            </span>
+                              </span>
                             )}
 
                             {b.baby_bed && (
-                            <span
+                              <span
                                 className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-700"
-                                title="Babybett">
+                                title="Babybett"
+                              >
                                 Babybett
-                            </span>
+                              </span>
                             )}
-                        </div>
+                          </div>
                         )}
-                      </div>
+                      </td>
 
-                      {/* Pauschalen / Zuschläge */}
-                      {extras.length > 0 && (
-                        <div className="mt-1 text-xs text-slate-500 truncate">
-                          {extras.map((x) => x.name).join(" • ")}
+                      {/* Status */}
+                      <td className="px-4 py-3 align-top text-slate-700">
+                        <span className="soft-badge soft-badge-neutral">
+                          {b.status_label ?? "In Bearbeitung"}
+                        </span>
+                      </td>
+
+                      {/* Betrag */}
+                      <td className="px-4 py-3 align-top text-right text-slate-900 tabular-nums">
+                        {formatMoney(b.total_amount)} €
+                      </td>
+
+                      {/* Aktionen */}
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-xs"
+                            onClick={() =>
+                              console.log("TODO: Details / Bearbeiten", b.id)
+                            }
+                          >
+                            Details
+                          </button>
                         </div>
-                      )}
-                    </td>
+                      </td>
+                    </tr>
+                  );
+                })}
 
-                    {/* Status */}
-                    <td className="px-4 py-3 align-top text-slate-700">
-                      <span className="soft-badge soft-badge-neutral">
-                        {b.status_label ?? "In Bearbeitung"}
-                      </span>
-                    </td>
-
-                    {/* Betrag */}
-                    <td className="px-4 py-3 align-top text-right text-slate-900 tabular-nums">
-                      {formatMoney(b.total_amount)} €
-                    </td>
-
-                    {/* Aktionen */}
-                    <td className="px-4 py-3 align-top">
-                      <div className="flex justify-end gap-2">
-                        {/* Platzhalter: später Status / Zimmer / Details */}
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-xs"
-                          onClick={() =>
-                            console.log("TODO: Details / Bearbeiten", b.id)
-                          }
-                        >
-                          Details
-                        </button>
-                      </div>
+                {filteredAndSortedBookings.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-10 text-center text-slate-500"
+                    >
+                      Noch keine Anmeldungen mit diesem Status.
                     </td>
                   </tr>
-                );
-              })}
+                )}
+              </tbody>
+            </table>
+          </div>
 
-              {filteredAndSortedBookings.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-10 text-center text-slate-500"
-                  >
-                    Noch keine Anmeldungen mit diesem Status.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          {/* Link: Nach oben scrollen */}
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() =>
+                window.scrollTo({
+                  top: 0,
+                  behavior: "smooth",
+                })
+              }
+              className="text-xs font-semibold text-sky-600 hover:text-sky-800 hover:underline"
+            >
+              Nach oben
+            </button>
+          </div>
         </div>
-      
-  </div>
-</section>
+      </section>
     </AppShell>
   );
 }
