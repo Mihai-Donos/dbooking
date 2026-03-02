@@ -2,6 +2,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Head, Link } from "@inertiajs/react";
 import AppShell from "@/Layouts/AppShell";
+import StatusSlider from "@/Components/StatusSlider";
 import {
   ArrowLeft,
   BedSingle,
@@ -49,6 +50,14 @@ const STATUS_TABS = [
   { key: "cancelled", label: "Storniert" },
 ];
 
+const BULK_ACTIONS = [
+  { value: "", label: "Aktion auswählen …" },
+  { value: "set_confirmed", label: "Status: Bestätigt (Fake)" },
+  { value: "export_xlsx", label: "Export als XLSX (Fake)" },
+  { value: "delete", label: "Ausgewählte löschen (Fake)" },
+  { value: "reset_rooms", label: "Zimmerzuweisung zurücksetzen (Fake)" },
+];
+
 export default function EventBookingsIndex({
   event,
   bookings = [],
@@ -61,27 +70,60 @@ export default function EventBookingsIndex({
 
   const total = summary.bookings_count ?? bookings.length;
 
-  // Slider-Thumb: Position + Breite (misst den aktiven Button)
-  const sliderRef = useRef(null);
-  const [thumbRect, setThumbRect] = useState({ left: 0, width: 0 });
-
+  const [selectedIds, setSelectedIds] = useState([]);
+  
   useEffect(() => {
-    const container = sliderRef.current;
-    if (!container) return;
+    // Sobald Filter/Suche/Sortierung wechselt, Auswahl leeren
+    setSelectedIds([]);
+  }, [statusFilter, search, sortBy, sortDir]);
 
-    const activeBtn = container.querySelector(
-      `button[data-status-key="${statusFilter}"]`
-    );
-    if (!activeBtn) return;
+  const [bulkAction, setBulkAction] = useState("");
+ 
+  const handleBulkApply = () => {
+    if (!bulkAction || selectedIds.length === 0) return;
 
-    const cRect = container.getBoundingClientRect();
-    const bRect = activeBtn.getBoundingClientRect();
+    // Nur Fake-Logik – hier später echte API-Calls einbauen
+    switch (bulkAction) {
+      case "set_confirmed":
+        alert(
+          `Fake: Setze Status auf "Bestätigt" für ${selectedIds.length} Buchung(en): ` +
+            selectedIds.join(", ")
+        );
+        break;
 
-    setThumbRect({
-      left: bRect.left - cRect.left + 2, // leichter Innenabstand
-      width: bRect.width - 4,
-    });
-  }, [statusFilter, bookings.length]);
+      case "export_xlsx":
+        alert(
+          `Fake: Exportiere ${selectedIds.length} Buchung(en) als XLSX: ` +
+            selectedIds.join(", ")
+        );
+        break;
+
+      case "delete":
+        if (
+          confirm(
+            `Fake: ${selectedIds.length} Buchung(en) löschen?\n(Das ist nur ein Test – es passiert noch nichts)`
+          )
+        ) {
+          alert("Fake-Löschen ausgeführt.");
+        }
+        break;
+
+      case "reset_rooms":
+        alert(
+          `Fake: Setze Zimmerzuweisung zurück für ${selectedIds.length} Buchung(en): ` +
+            selectedIds.join(", ")
+        );
+        break;
+
+      default:
+        break;
+    }
+
+    // Nach Ausführen wieder zurücksetzen
+    setBulkAction("");
+    setSelectedIds([]);
+  };
+
 
   // Counts je Status
   const statusCounts = useMemo(() => {
@@ -269,54 +311,85 @@ export default function EventBookingsIndex({
 
           {/* Status-Slider rechts */}
           <div className="flex justify-start md:justify-end">
-            <div
-              ref={sliderRef}
-              className="relative inline-flex shrink-0 rounded-full bg-slate-100/80 px-1 py-1 shadow-inner overflow-hidden"
-            >
-              {/* Thumb richtet sich nach dem aktiven Button */}
-              <div
-                className="pointer-events-none absolute top-1 bottom-1 rounded-full bg-white shadow-sm transition-all duration-200 ease-out"
-                style={{
-                  left: thumbRect.left,
-                  width: thumbRect.width,
-                }}
-              />
-
-              {STATUS_TABS.map((tab) => {
-                const active = statusFilter === tab.key;
-                const count = statusCounts[tab.key] ?? 0;
-
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    data-status-key={tab.key}
-                    onClick={() => setStatusFilter(tab.key)}
-                    className={[
-                      "relative z-10 inline-flex flex-1 items-center justify-center rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition",
-                      active
-                        ? "text-slate-900"
-                        : "text-slate-500 hover:text-slate-700",
-                    ].join(" ")}
-                  >
-                    <span>{tab.label}</span>
-                    <span className="ml-1 text-[11px] text-slate-400">
-                      ({count})
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <StatusSlider
+              tabs={STATUS_TABS}
+              activeKey={statusFilter}
+              onChange={setStatusFilter}
+              counts={statusCounts}
+            />
           </div>
+
+          {/* Bulk-Actions-Bar */}
+          <div className="mt-0 flex flex-wrap items-center justify-between gap-3">
+
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={bulkAction}
+                  onChange={(e) => setBulkAction(e.target.value)}
+                  className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 shadow-sm outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-100 disabled:bg-slate-50 disabled:text-slate-300"
+                  disabled={selectedIds.length === 0}
+                >
+                  {BULK_ACTIONS.map((action) => (
+                    <option key={action.value} value={action.value}>
+                      {action.label}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={handleBulkApply}
+                  disabled={selectedIds.length === 0 || !bulkAction}
+                  className={[
+                    "inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm",
+                    selectedIds.length === 0 || !bulkAction
+                      ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                      : "bg-sky-500 text-white hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-300",
+                  ].join(" ")}
+                >
+                  Anwenden
+                </button>
+              </div>
+
+              <div className="text-xs text-slate-500">
+                {selectedIds.length === 0
+                  ? "Keine Einträge ausgewählt"
+                  : `${selectedIds.length} Einträge ausgewählt`}
+              </div>
+            </div>
         </div>
 
         {/* Tabellenbereich */}
-        <div className="px-6 pb-4">
+        <div className="px-6 pb-4 mt-5">
           <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white">
             <table className="min-w-full text-sm">
               <thead className="bg-sky-50/60 text-slate-700">
                 <tr>
-                  {/* Person + Sort */}
+                 {/* Select-All Checkbox */}
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-slate-300 text-brand-500 focus:ring-brand-300"
+                      checked={
+                        filteredAndSortedBookings.length > 0 &&
+                        filteredAndSortedBookings.every((b) => selectedIds.includes(b.id))
+                      }
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        if (checked) {
+                          // alle sichtbaren auswählen
+                          const allVisibleIds = filteredAndSortedBookings.map((b) => b.id);
+                          setSelectedIds(allVisibleIds);
+                        } else {
+                          // Auswahl komplett leeren
+                          setSelectedIds([]);
+                        }
+                      }}
+                    />
+                  </th>
+                   
+                 {/* Person + Sort */}
                   <th className="px-4 py-3 text-left font-semibold">
                     <div className="flex items-center gap-1">
                       <span>Person</span>
@@ -390,8 +463,36 @@ export default function EventBookingsIndex({
                 {filteredAndSortedBookings.map((b) => {
                   const extras = b.per_booking_items || [];
 
+                  const isSelected = selectedIds.includes(b.id);
+
                   return (
-                    <tr key={b.id} className="hover:bg-sky-50/40">
+                    <tr
+                        key={b.id}
+                        className={[
+                          "transition-colors",
+                          isSelected ? "bg-sky-50" : "hover:bg-sky-50/40",
+                        ].join(" ")}
+                      >
+                        {/* Checkbox für einzelne Zeile */}
+                        <td className="px-4 py-3 align-top">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-brand-500 focus:ring-brand-300"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setSelectedIds((prev) => {
+                              if (checked) {
+                                if (prev.includes(b.id)) return prev;
+                                return [...prev, b.id];
+                              } else {
+                                return prev.filter((id) => id !== b.id);
+                              }
+                            });
+                          }}
+                        />
+                        </td>
+                      
                       {/* Person */}
                       <td className="px-4 py-3 align-top">
                         <div className="flex items-start gap-2">
@@ -466,28 +567,28 @@ export default function EventBookingsIndex({
                           </span>
                         </div>
 
-                        {/* Optionen: Einzelzimmer / Babybett */}
-                        {(b.single_room || b.baby_bed) && (
-                          <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
-                            {b.single_room && (
-                              <span
-                                className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-700"
-                                title="Einzelzimmer"
-                              >
-                                Einzelzimmer
-                              </span>
-                            )}
+                        {(b.person_type || b.single_room || b.baby_bed) && (
+                            <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
+                              {b.person_type && (
+                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-700">
+                                  {b.person_type}
+                                </span>
+                              )}
 
-                            {b.baby_bed && (
-                              <span
-                                className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-700"
-                                title="Babybett"
-                              >
-                                Babybett
-                              </span>
-                            )}
-                          </div>
-                        )}
+                              {b.single_room && (
+                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-700">
+                                  Einzelzimmer
+                                </span>
+                              )}
+
+                              {b.baby_bed && (
+                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-700">
+                                  Babybett
+                                </span>
+                              )}
+                            </div>
+                          )}
+
                       </td>
 
                       {/* Status */}

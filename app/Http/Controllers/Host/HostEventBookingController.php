@@ -24,21 +24,38 @@ class HostEventBookingController extends Controller
             ->with([
                 'user:id,email',
                 'room:id,number',
-                'items' => function ($q) {
-                    $q->where('charge_type', OfferChargeType::PER_BOOKING->value);
-                },
+                // Wichtig: items NICHT mehr hier auf PER_BOOKING einschränken,
+                // sonst haben wir später kein PER_DAY-Item mehr.
+                'items',
             ])
             ->orderBy('from_date')
             ->orderBy('customer_name')
             ->get()
             ->map(function (Booking $b) {
-                // ✅ Status pro Buchung berechnen
+                // Status berechnen
                 $rawStatus = $b->status;
 
                 $statusEnum = $rawStatus instanceof BookingStatus
                     ? $rawStatus
                     : BookingStatus::from((int) $rawStatus);
 
+                // Collection der Items
+                $allItems = $b->items ?? collect();
+
+                // PER_BOOKING-Zuschläge (wie bisher)
+                $perBookingItems = $allItems->where(
+                    'charge_type',
+                    OfferChargeType::PER_BOOKING->value
+                );
+
+                // Beispiel: Personentyp aus erstem PER_DAY-Item-Name ableiten
+                $perDayItem = $allItems->firstWhere(
+                    'charge_type',
+                    OfferChargeType::PER_DAY->value
+                );
+
+                $personType = $perDayItem?->name; // <--- HIER hast du das name-Feld aus BookingItems
+    
                 return [
                     'id' => $b->id,
                     'customer_name' => $b->customer_name,
@@ -49,6 +66,9 @@ class HostEventBookingController extends Controller
 
                     'status' => $statusEnum->value,
                     'status_label' => $statusEnum->label(),
+
+                    // Personentyp (z.B. "Erwachsener", "Kind", …)
+                    'person_type' => $personType,
 
                     // Flags für Zimmer-Optionen (für die Icons)
                     'single_room' => (bool) $b->single_room,
@@ -64,11 +84,11 @@ class HostEventBookingController extends Controller
                         'email' => $b->user->email,
                     ] : null,
 
-                    // Pauschalen / Zuschläge pro Buchung
-                    'per_booking_items' => $b->items->map(function ($item) {
+                    // Pauschalen / Zuschläge pro Buchung (PER_BOOKING)
+                    'per_booking_items' => $perBookingItems->map(function ($item) {
                         return [
                             'id' => $item->id,
-                            'name' => $item->name,
+                            'name' => $item->name,       // 👈 name aus BookingItems
                             'line_total' => $item->line_total,
                         ];
                     })->values(),
@@ -100,8 +120,6 @@ class HostEventBookingController extends Controller
             ],
             'bookings' => $bookings,
             'summary' => $summary,
-            // optional: initial aktiver Tab
-            // 'activeStatus' => $request->query('status', 'in_review'),
         ]);
     }
 }
