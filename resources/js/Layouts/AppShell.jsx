@@ -65,7 +65,7 @@ export default function AppShell({
                   <div className="min-w-0">
                     <h1 className="soft-title">{title ?? "Page"}</h1>
                     <p className="mt-1 soft-subtitle">
-                      {subtitle ?? "BLUE1 (Soft UI) Look: weich, hell, floating surfaces."}
+                      {subtitle ?? "BLUE1"}
                     </p>
                   </div>
 

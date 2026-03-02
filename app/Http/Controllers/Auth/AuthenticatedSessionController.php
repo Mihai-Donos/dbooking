@@ -33,7 +33,18 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = Auth::user();
+
+        if ($user->role === 'admin') {
+            return redirect()->intended('/admin/dashboard');
+        }
+
+        if ($user->role === 'host') {
+            return redirect()->intended('/host/events');
+        }
+
+        // Default: normaler User
+        return redirect()->intended('/veranstaltungen');
     }
 
     /**

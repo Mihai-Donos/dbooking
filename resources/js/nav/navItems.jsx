@@ -40,11 +40,11 @@ export function getNavItems(role = "user") {
     section: "Übersicht",
     items: [
       { label: "Anmeldungen", href: "/anmeldungen/uebersicht", icon: ClipboardList, match: ["/anmeldungen", "/bookings"] },
-      { label: "Rechnungen", href: "/bookings/archive", icon: Receipt, match: ["/bookings/archive"]},
+      { label: "Rechnungen", href: "/bookings/archive", icon: Receipt, match: ["/bookings/archive"], badge: "Soon"},
 
-       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, match: ["/dashboard"] },
+       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, match: ["/dashboard"], badge: "Fake" },
        { label: "Profil", href: "/profile", icon: User, match: ["/profile"] },
-       { label: "FAQ", href: "/faq", icon: HelpCircle, match: ["/faq"] },
+       { label: "FAQ", href: "/faq", icon: HelpCircle, match: ["/faq"], badge: "Soon" },
     ],
   });
 

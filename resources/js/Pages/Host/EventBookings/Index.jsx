@@ -262,7 +262,7 @@ export default function EventBookingsIndex({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Person, E-Mail, Zimmer…"
-                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-1.5 text-[16px] text-slate-900 shadow-sm outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                className="search-input"
               />
             </div>
           </div>

@@ -146,6 +146,9 @@ class BookingController extends Controller
 
             // ✅ Frontend erwartet "flashSuccess"
             'flashSuccess' => session('success'),
+
+            // Person hinzufügen durch remote Aufruf
+            'autoAddPerson' => $request->boolean('add'),
         ]);
     }
 
@@ -336,7 +339,10 @@ class BookingController extends Controller
 
             $booking->update(['total_amount' => round($sum, 2)]);
 
-            return back()->with('success', 'Buchung gespeichert.');
+            // $add=1 nicht mitgeben, Exit loop
+            return redirect()
+                ->route('bookings.new', ['event' => $event->id])
+                ->with('success', 'Anmeldung gespeichert.');
         });
     }
 

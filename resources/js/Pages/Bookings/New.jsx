@@ -138,6 +138,7 @@ export default function New2({
   user_event_total_amount = 0,
   user_event_booking_count = 0,
   user_event_bookings = [],
+  autoAddPerson = false,
 }) {
   const PER_BOOKING = chargeTypes?.PER_BOOKING ?? 1;
   const PER_DAY = chargeTypes?.PER_DAY ?? 2;
@@ -266,8 +267,16 @@ const availableToSlots = useMemo(() => {
   const nights = useMemo(() => nightsBetween(data.from_date, data.to_date), [data.from_date, data.to_date]);
 
   // UX State
-  const [bookingsOpen, setBookingsOpen] = useState(hasBookings); // wenn Buchungen existieren: offen
-  const [showForm, setShowForm] = useState(!hasBookings); // wenn Buchungen existieren: zunächst Formular versteckt
+  
+    // wenn Buchungen existieren: offen, außer der Redirect kommt von extern
+  const [bookingsOpen, setBookingsOpen] = useState(
+    autoAddPerson ? false : hasBookings
+  );
+
+    // wenn Buchungen existieren: zunächst Formular versteckt
+  const [showForm, setShowForm] = useState(
+    autoAddPerson ? true : !hasBookings
+  );
 
   const [periodExpanded, setPeriodExpanded] = useState(true);
 
@@ -288,17 +297,11 @@ const availableToSlots = useMemo(() => {
   const nameInputRef = useRef(null);
   const periodRef = React.useRef(null);
 
-  // Wenn nach dem Speichern Buchungen da sind: Chevron offen + Formular zu
-  useEffect(() => {
-    if (hasBookings) {
-      setBookingsOpen(true);
-      setShowForm(false);
-    } else {
-      setBookingsOpen(false);
-      setShowForm(false); // Start erst per "Anmeldung starten"
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const TIME_LABELS = {
+    "08:00": "Frühstück",
+    "13:00": "Mittagessen",
+    "18:00": "Abendessen",
+  };
 
   const perDaySelected = useMemo(
     () => perDayOffers.find((o) => Number(o.id) === Number(data.per_day.offer_id)),
@@ -465,6 +468,7 @@ useEffect(() => {
     scrollToName();
   };
 
+
   const handleCancelForm = () => {
     // Formular zurücksetzen
     resetForm();
@@ -582,8 +586,8 @@ useEffect(() => {
 
   return (
     <AppShell
-      title="Teilnahme anmelden"
-      subtitle="Melde alle Personen an, die dich begleiten."
+      title="Teilnahme(n) anmelden"
+      subtitle="Melde dich und alle Personen an, die dich begleiten."
       actions={
         !hasBookings ? (
           <button type="button" className="btn btn-primary" onClick={handleStart}>
@@ -719,7 +723,10 @@ useEffect(() => {
                       <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
                         {/* Von */}
                         <div>
-                          <label className="block text-sm font-medium text-slate-700">Von (Datum)</label>
+                          <label className="block text-sm text-slate-700">
+                            <span className="font-semibold">Von</span>{" "}
+                            <span className="font-normal">(Ankunft)</span>
+                          </label>
                           <input
                             type="date"
                             value={data.from_date}
@@ -736,7 +743,7 @@ useEffect(() => {
                                 onClick={() => setData("from_time", t)}
                                 className={bubble(data.from_time === t)}
                               >
-                                {t} Uhr
+                                {TIME_LABELS[t] ?? `${t} Uhr`}
                               </button>
                             ))}
                           </div>
@@ -746,7 +753,10 @@ useEffect(() => {
 
                         {/* Bis */}
                         <div>
-                          <label className="block text-sm font-medium text-slate-700">Bis (Datum)</label>
+                          <label className="block text-sm text-slate-700">
+                            <span className="font-semibold">Von</span>{" "}
+                            <span className="font-normal">(Ankunft)</span>
+                          </label>
                           <input
                             type="date"
                             value={data.to_date}
@@ -763,7 +773,7 @@ useEffect(() => {
                                 onClick={() => setData("to_time", t)}
                                 className={bubble(data.to_time === t)}
                               >
-                                {t} Uhr
+                                {TIME_LABELS[t] ?? `${t} Uhr`}
                               </button>
                             ))}
                           </div>

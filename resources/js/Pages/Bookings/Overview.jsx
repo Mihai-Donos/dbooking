@@ -1,6 +1,6 @@
 // resources/js/Pages/Bookings/Overview.jsx
 import React, { useMemo, useState, useEffect } from "react";
-import { Head, router } from "@inertiajs/react";
+import { Head, router, Link } from "@inertiajs/react";
 import {
   Pencil,
   Trash2,
@@ -12,8 +12,11 @@ import {
   BedSingle,
   Baby,
   UserCheck,
+  UserPlus,
 } from "lucide-react";
 import AppShell from "@/Layouts/AppShell";
+import { TIME_LABELS } from "@/utils/timeLabels";
+import { labelForTime } from "@/utils/timeLabels";
 
 function formatDateTimeDE(iso) {
   if (!iso) return "—";
@@ -24,6 +27,17 @@ function formatDateTimeDE(iso) {
   const hh = String(d.getHours()).padStart(2, "0");
   const mi = String(d.getMinutes()).padStart(2, "0");
   return `${dd}.${mm}.${yyyy} ${hh}:${mi}`;
+}
+
+function formatDateTimeNoTime(iso) {
+  if (!iso) return "—";
+  const d = new Date(String(iso).replace(" ", "T"));
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}.${mm}.${yyyy}`;
 }
 
 function moneyDE(v) {
@@ -128,12 +142,12 @@ export default function Overview({ groups = [] }) {
   };
 
   const handleDelete = (eventId, bookingId) => {
-    if (!confirm("Buchung wirklich löschen?")) return;
+    if (!confirm("Anmeldung wirklich löschen?")) return;
     router.delete(route("bookings.destroy", [eventId, bookingId]), { preserveScroll: true });
   };
 
   return (
-    <AppShell title="Anmeldungen" subtitle="Übersicht deiner Buchungen">
+    <AppShell title="Anmeldungen" subtitle="Übersicht deiner Anmeldungen">
       <Head title="Anmeldungen – Übersicht" />
 
       <div className="space-y-6">
@@ -159,7 +173,7 @@ export default function Overview({ groups = [] }) {
                   </div>
                       {/* Desktop einzeilig */}
                       <div className="hidden sm:block mt-1 text-sm text-slate-600">
-                        Von {formatDateTimeDE(e.start_date)} – Bis {formatDateTimeDE(e.end_date)}
+                        Von  {formatDateTimeDE(e.start_date)} – Bis {formatDateTimeDE(e.end_date)}
                       </div>
 
                       {/* Mobile zweizeilig */}
@@ -180,43 +194,81 @@ export default function Overview({ groups = [] }) {
                 </div>
 
                 <div className="flex flex-col items-end gap-3">
-                {/* Summe */}
-                <div className="text-right leading-tight">
-                  <div className="text-xs text-slate-500">Gesamt</div>
-                  <div className="text-lg font-semibold text-slate-900 tabular-nums whitespace-nowrap">
-                    {moneyDE(e.total_amount)} €
-                  </div>
-                  
-                </div>
+  {/* Summe */}
+  <div className="text-right leading-tight">
+    <div className="text-xs text-slate-500">Gesamt</div>
+    <div className="text-lg font-semibold text-slate-900 tabular-nums whitespace-nowrap">
+      {moneyDE(e.total_amount)} €
+    </div>
+  </div>
 
-                {/* Anzahl */}
-                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-xs">
-                  <span className="text-sm font-semibold text-slate-900">{e.booking_count}×</span>
-                  <span className="text-sm text-slate-600">
-                    {Number(e.booking_count) === 1 ? "Platz" : "Plätze"}
-                  </span>
-                </div>
+  {/* Anzahl */}
+  <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-xs">
+    <span className="text-sm font-semibold text-slate-900">
+      {e.booking_count}×
+    </span>
+    <span className="text-sm text-slate-600">
+      {Number(e.booking_count) === 1 ? "Platz" : "Plätze"}
+    </span>
+  </div>
 
-                {/* Chevron darunter */}
-                <button
-                  type="button"
-                  className="icon-btn icon-btn--edit border-slate-300 hover:border-slate-400"
-                  aria-label={isOpen ? "Einklappen" : "Ausklappen"}
-                  onClick={() => toggle(e.id)}
-                >
-                  <svg
-                    className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
+  {/* Quick Actions: Person hinzufügen + Chevron */}
+  <div className="flex items-center gap-2">
+    {/* Mobile: nur Icon-Button */}
+    <button
+      type="button"
+      className="icon-btn icon-btn--edit sm:hidden border-slate-300 hover:border-slate-400"
+      aria-label="Person hinzufügen"
+      onClick={() =>
+        router.visit(route("bookings.new", e.id), {
+          method: "get",
+          data: { add: 1 },
+          preserveScroll: false,
+        })
+      }
+    >
+      <UserPlus className="h-4 w-4" />
+    </button>
+
+    {/* Desktop: voller Primary-Button */}
+    <button
+      type="button"
+      className="hidden sm:inline-flex items-center gap-2 btn btn-primary"
+      onClick={() =>
+        router.visit(route("bookings.new", e.id), {
+          method: "get",
+          data: { add: 1 },
+          preserveScroll: false,
+        })
+      }
+    >
+      <UserPlus className="h-4 w-4" />
+      <span>Person hinzufügen</span>
+    </button>
+
+    {/* Chevron */}
+    <button
+      type="button"
+      className="icon-btn icon-btn--edit border-slate-300 hover:border-slate-400"
+      aria-label={isOpen ? "Einklappen" : "Ausklappen"}
+      onClick={() => toggle(e.id)}
+    >
+      <svg
+        className={`h-4 w-4 transition-transform ${
+          isOpen ? "rotate-180" : ""
+        }`}
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fillRule="evenodd"
+          d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </button>
+  </div>
+</div>
 
               </div>
 
@@ -247,17 +299,21 @@ export default function Overview({ groups = [] }) {
 
                           {/* Desktop */}
                           <div className="hidden sm:block mt-1 text-sm text-slate-600">
-                            Von {formatDateTimeDE(b.from_date)} – Bis {formatDateTimeDE(b.to_date)}
+                            Von {formatDateTimeNoTime(b.from_date)} {labelForTime(b.from_date)} – Bis {formatDateTimeNoTime(b.to_date)} {labelForTime(b.to_date)}
                           </div>
 
                           {/* Mobile */}
                           <div className="mt-1 text-sm text-slate-600 sm:hidden">
                             <div className="grid grid-cols-[1.7rem_1fr] items-baseline gap-x-2 leading-snug">
                               <span className="text-slate-500">Von</span>
-                              <span className="tabular-nums">{formatDateTimeDE(e.start_date)}</span>
+                              <span className="tabular-nums">{formatDateTimeNoTime(e.start_date)}{" "}{labelForTime(b.from_date)} 
+
+                              </span>
 
                               <span className="text-slate-500">Bis</span>
-                              <span className="tabular-nums">{formatDateTimeDE(e.end_date)}</span>
+                              <span className="tabular-nums">{formatDateTimeNoTime(e.end_date)}{" "}{labelForTime(b.to_date)}
+
+                              </span>
                             </div>
                           </div>
 

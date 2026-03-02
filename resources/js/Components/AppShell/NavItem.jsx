@@ -26,7 +26,9 @@ export default function NavItem({ item, currentPath, onNavigate }) {
     });
   }, [hasChildren, item.children, currentPath]);
 
-  const selfActive = pathMatches(currentPath, item.match || [href], { exact: !!item.exact });
+  const selfActive = pathMatches(currentPath, item.match || [href], {
+    exact: !!item.exact,
+  });
   const isActive = selfActive || childActive;
 
   const [open, setOpen] = useState(() => (hasChildren ? isActive : false));
@@ -49,12 +51,35 @@ export default function NavItem({ item, currentPath, onNavigate }) {
       : "bg-gray-100 text-gray-600 group-hover:bg-gray-200",
   ].join(" ");
 
-  // ✅ deine Anpassung beibehalten: gap-5
+  // Child-Links (Subnavigation), gap-5 beibehalten
   const childLinkClass = (active) =>
     [
       "flex items-center gap-5 rounded-xl px-3 py-2 text-sm font-semibold transition",
       active ? "bg-sky-50 text-slate-900" : "text-slate-400 hover:bg-slate-50",
     ].join(" ");
+
+  // Kleines Badge-Fragment (Soon / Fake)
+  const renderBadge = (badge) => {
+    if (!badge) return null;
+
+    if (badge === "Soon") {
+      return (
+        <span className="ml-auto rounded-full bg-slate-50 border px-2 py-0.5 text-[10px] font-semibold lowercase tracking-wide text-slate-600">
+          Soon
+        </span>
+      );
+    }
+
+    if (badge === "Fake") {
+      return (
+        <span className="ml-auto rounded-full bg-slate-50 border px-2 py-0.5 text-[10px] font-semibold lowercase tracking-wide text-slate-600">
+          Fake
+        </span>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="space-y-1">
@@ -73,7 +98,12 @@ export default function NavItem({ item, currentPath, onNavigate }) {
                 <Icon className="h-4 w-4" />
               </span>
             ) : null}
-            <span className="truncate">{item.label}</span>
+
+            {/* Label + Badge (Top-Level mit Children) */}
+            <div className="flex items-center gap-2 min-w-0 w-full">
+              <span className="truncate">{item.label}</span>
+              {renderBadge(item.badge)}
+            </div>
           </span>
 
           <ChevronDown
@@ -90,21 +120,31 @@ export default function NavItem({ item, currentPath, onNavigate }) {
               <Icon className="h-4 w-4" />
             </span>
           ) : null}
-          <span className="truncate">{item.label}</span>
+
+          {/* Label + Badge (Top-Level ohne Children, z.B. Rechnungen, FAQ) */}
+          <div className="flex items-center gap-2 min-w-0 w-full">
+            <span className="truncate">{item.label}</span>
+            {renderBadge(item.badge)}
+          </div>
         </Link>
       )}
 
       {/* Children */}
       {hasChildren && open ? (
-        // ✅ HIER stellst du den Abstand des Punktes von links ein:
-        // ml-4 -> ml-5 / ml-6 (weiter nach rechts), oder ml-3 (mehr nach links)
         <div className="ml-4 space-y-1">
           {item.children.map((c) => {
             const cHref = typeof c.href === "function" ? c.href() : c.href;
-            const cActive = pathMatches(currentPath, c.match || [cHref], { exact: !!c.exact });
+            const cActive = pathMatches(currentPath, c.match || [cHref], {
+              exact: !!c.exact,
+            });
 
             return (
-              <Link key={c.label} href={cHref} onClick={onNavigate} className={childLinkClass(cActive)}>
+              <Link
+                key={c.label}
+                href={cHref}
+                onClick={onNavigate}
+                className={childLinkClass(cActive)}
+              >
                 {/* kleiner quadratischer Punkt */}
                 <span
                   className={[
@@ -112,8 +152,12 @@ export default function NavItem({ item, currentPath, onNavigate }) {
                     cActive ? "bg-sky-500" : "bg-slate-300",
                   ].join(" ")}
                 />
-                {/* ✅ deine Anpassung beibehalten */}
-                <span className="truncate ml-2">{c.label}</span>
+
+                {/* Child-Label + optional Child-Badge (falls du es mal brauchst) */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="truncate ml-2">{c.label}</span>
+                  {renderBadge(c.badge)}
+                </div>
               </Link>
             );
           })}

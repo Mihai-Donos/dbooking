@@ -52,8 +52,8 @@ export default function SideBar({ nav = [], sidebarOpen, setSidebarOpen, onNavig
               D
             </div>
             <div className="min-w-0">
-              <div className="truncate text-sm font-extrabold text-slate-900">DBOOKING</div>
-              <div className="truncate text-xs font-semibold text-slate-500">Soft UI · BLUE1</div>
+              <div className="truncate text-sm font-extrabold text-slate-900">BuchDeinZimmer.com</div>
+              <div className="truncate text-xs font-semibold text-slate-500">Jetzt dabei sein!</div>
             </div>
           </div>
         </div>

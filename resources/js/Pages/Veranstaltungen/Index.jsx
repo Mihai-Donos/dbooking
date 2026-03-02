@@ -4,6 +4,7 @@ import PublicShell from "@/Layouts/PublicShell";
 import Pagination from "@/Components/Pagination";
 import AppShell from "@/Layouts/AppShell";
 
+
 function formatDateRange(start, end) {
   const fmt = (iso) => {
     if (!iso) return "—";
@@ -60,7 +61,15 @@ export default function Index({ category = "Freizeiten", events }) {
               className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col"
             >
               {/* Bild/Placeholder */}
-              <div className="h-36 bg-gradient-to-br from-sky-100 to-slate-100" />
+
+              <div className="h-36 overflow-hidden bg-slate-100">
+                <img
+                  src="/images/Title_Event.jpg"
+                  alt="Symbolbild für Event"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+
 
               {/* Content (flex-1, damit Button unten bleibt) */}
               <div className="p-4 flex-1 flex flex-col">
@@ -107,14 +116,14 @@ export default function Index({ category = "Freizeiten", events }) {
                       href={route("bookings.new", e.id)}
                       className="inline-flex w-full items-center justify-center rounded-xl bg-sky-200 px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-sky-300 transition"
                     >
-                      Buchen
+                      Jetzt anmelden
                     </Link>
                   ) : (
                     <button
                       type="button"
                       disabled
                       className="inline-flex w-full items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-400 cursor-not-allowed"
-                      title="Buchen ist aktuell nicht möglich"
+                      title="Die Anmeldung ist aktuell nicht möglich"
                     >
                       Buchen
                     </button>
@@ -127,7 +136,7 @@ export default function Index({ category = "Freizeiten", events }) {
 
         {items.length === 0 && (
           <div className="col-span-full rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-600">
-            Aktuell sind keine buchbaren Veranstaltungen verfügbar.
+            Aktuell werden keine Veranstaltungen angeboten.
           </div>
         )}
       </div>
@@ -141,7 +150,7 @@ export default function Index({ category = "Freizeiten", events }) {
     return (
       <AppShell
         title="Veranstaltungen"
-        subtitle="Entdecke buchbare Freizeiten – sichtbar innerhalb des aktuellen Zeitfensters."
+        subtitle="Entdecke aktuelle Veranstaltungen."
       >
         {content}
       </AppShell>
@@ -151,7 +160,7 @@ export default function Index({ category = "Freizeiten", events }) {
   return (
     <PublicShell
       title="Veranstaltungen"
-      subtitle="Entdecke buchbare Freizeiten – sichtbar innerhalb des aktuellen Zeitfensters."
+      subtitle="Entdecke aktuelle Veranstaltungen."
     >
       {content}
     </PublicShell>

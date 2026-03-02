@@ -106,4 +106,15 @@ textarea {
   .icon-btn__icon {
     @apply h-4 w-4;
   }
+
+  .search-input {
+    @apply w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-1.5 text-[16px] text-slate-900
+           outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-100;
+  }
+
+  .search-input::placeholder {
+    font-size: 14.5px;            /*  kleinere Schrift für Placeholder */
+    color: rgb(148 163 184);    /* ungefähr Tailwind slate-400 */
+  }
+
 }
