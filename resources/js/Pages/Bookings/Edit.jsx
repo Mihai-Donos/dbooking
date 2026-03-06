@@ -501,7 +501,7 @@ export default function Edit({
             {/* Name */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <label className="block text-base font-semibold text-slate-900">
-                Vorname, Name*
+                Vorname Name*
               </label>
               <input
                 ref={nameInputRef}

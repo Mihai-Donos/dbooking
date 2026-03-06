@@ -1,8 +1,9 @@
 // resources/js/Pages/Host/EventBookings/Index.jsx
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import AppShell from "@/Layouts/AppShell";
 import StatusSlider from "@/Components/StatusSlider";
+import { badgeClass } from "@/utils/statusBadges";
 import {
   ArrowLeft,
   BedSingle,
@@ -10,6 +11,9 @@ import {
   UserCheck,
   Triangle,
   Search,
+  Check,
+  Wand,
+  ChevronDown,
 } from "lucide-react";
 
 function formatDateTime(v) {
@@ -44,84 +48,131 @@ function bookingStatusKey(b) {
   return "in_progress";
 }
 
+// Optionen für das Status-Popup
+const STATUS_MENU = [
+  {
+    key: "in_progress",
+    label: "In Bearbeitung",
+    action: "status_in_review", // muss zu deinem Bulk-Enum passen
+    dotClass: "bg-slate-400",
+  },
+  {
+    key: "confirmed",
+    label: "Bestätigt",
+    action: "status_confirmed",
+    dotClass: "bg-emerald-500",
+  },
+  {
+    key: "cancelled",
+    label: "Storniert",
+    action: "status_cancelled",
+    dotClass: "bg-rose-500",
+  },
+];
+
 const STATUS_TABS = [
   { key: "in_progress", label: "In Bearbeitung" },
   { key: "confirmed", label: "Bestätigt" },
   { key: "cancelled", label: "Storniert" },
 ];
 
-const BULK_ACTIONS = [
-  { value: "", label: "Aktion auswählen …" },
-  { value: "set_confirmed", label: "Status: Bestätigt (Fake)" },
-  { value: "export_xlsx", label: "Export als XLSX (Fake)" },
-  { value: "delete", label: "Ausgewählte löschen (Fake)" },
-  { value: "reset_rooms", label: "Zimmerzuweisung zurücksetzen (Fake)" },
-];
-
 export default function EventBookingsIndex({
   event,
   bookings = [],
   summary = {},
+  bulkActions = [],
 }) {
   const [statusFilter, setStatusFilter] = useState("in_progress");
   const [sortBy, setSortBy] = useState(null); // 'person' | 'room' | null
   const [sortDir, setSortDir] = useState("asc"); // 'asc' | 'desc'
   const [search, setSearch] = useState("");
+  const [openStatusFor, setOpenStatusFor] = useState(null); // booking_id oder null
+
+  const [bulkAction, setBulkAction] = useState("");
+  const [bulkMenuOpen, setBulkMenuOpen] = useState(false);
+  const bulkMenuRef = useRef(null);
+
+    // Einzelnen Status per Inline-Menü ändern (nutzt den Bulk-Endpoint)
+    const handleInlineStatusChange = (bookingId, statusKey) => {
+      const opt = STATUS_MENU.find((o) => o.key === statusKey);
+      if (!opt) return;
+    
+      router.post(
+        route("host.events.bookings.bulk", event.id),
+        {
+          action: opt.action,
+          ids: [bookingId], // 👈 gleiches Feld wie im Bulk-Handler
+        },
+        {
+          preserveScroll: true,
+          preserveState: true,
+          onFinish: () => setOpenStatusFor(null),
+        }
+      );
+    };
+  
+    // Klick außerhalb schließt das Popup
+    useEffect(() => {
+      if (openStatusFor == null) return;
+  
+      function handleClickOutside() {
+        setOpenStatusFor(null);
+      }
+  
+      window.addEventListener("click", handleClickOutside);
+      return () => window.removeEventListener("click", handleClickOutside);
+    }, [openStatusFor]);
+
+      //  NEU: Klick außerhalb schließt Bulk-Menü
+  useEffect(() => {
+    if (!bulkMenuOpen) return;
+
+    function handleClickOutside(e) {
+      if (!bulkMenuRef.current) return;
+      if (!bulkMenuRef.current.contains(e.target)) {
+        setBulkMenuOpen(false);
+      }
+    }
+
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, [bulkMenuOpen]);
 
   const total = summary.bookings_count ?? bookings.length;
 
   const [selectedIds, setSelectedIds] = useState([]);
+  const topRef = useRef(null);
   
   useEffect(() => {
     // Sobald Filter/Suche/Sortierung wechselt, Auswahl leeren
     setSelectedIds([]);
   }, [statusFilter, search, sortBy, sortDir]);
 
-  const [bulkAction, setBulkAction] = useState("");
- 
+
   const handleBulkApply = () => {
     if (!bulkAction || selectedIds.length === 0) return;
-
-    // Nur Fake-Logik – hier später echte API-Calls einbauen
-    switch (bulkAction) {
-      case "set_confirmed":
-        alert(
-          `Fake: Setze Status auf "Bestätigt" für ${selectedIds.length} Buchung(en): ` +
-            selectedIds.join(", ")
-        );
-        break;
-
-      case "export_xlsx":
-        alert(
-          `Fake: Exportiere ${selectedIds.length} Buchung(en) als XLSX: ` +
-            selectedIds.join(", ")
-        );
-        break;
-
-      case "delete":
-        if (
-          confirm(
-            `Fake: ${selectedIds.length} Buchung(en) löschen?\n(Das ist nur ein Test – es passiert noch nichts)`
-          )
-        ) {
-          alert("Fake-Löschen ausgeführt.");
-        }
-        break;
-
-      case "reset_rooms":
-        alert(
-          `Fake: Setze Zimmerzuweisung zurück für ${selectedIds.length} Buchung(en): ` +
-            selectedIds.join(", ")
-        );
-        break;
-
-      default:
-        break;
+  
+    if (bulkAction === "delete") {
+      if (!confirm("Ausgewählte Buchungen wirklich löschen?")) {
+        return;
+      }
     }
-
-    // Nach Ausführen wieder zurücksetzen
-    setBulkAction("");
-    setSelectedIds([]);
+  
+    router.post(
+      route("host.events.bookings.bulk", event.id),
+      {
+        action: bulkAction,
+        ids: selectedIds,
+      },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          // nach erfolgreicher Aktion: Auswahl & Action zurücksetzen
+          setSelectedIds([]);
+          setBulkAction("");
+        },
+      }
+    );
   };
 
 
@@ -240,61 +291,14 @@ export default function EventBookingsIndex({
       <Head title="Anmeldungen verwalten" />
 
       {/* Event-Kopf + Tabelle in EINER Card */}
-      <section className="soft-surface p-0">
-        {/* Header-Bereich */}
-        <div className="px-6 pt-6 pb-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            {/* Linke Seite: Event-Info */}
-            <div className="min-w-0 space-y-1">
-              <div className="text-xs text-slate-500">Event</div>
-              <div className="text-lg font-semibold text-slate-900 truncate">
-                {event?.name ?? "—"}
-              </div>
-              {event?.description ? (
-                <div className="text-sm text-slate-600 line-clamp-2">
-                  {event.description}
-                </div>
-              ) : null}
-
-              {/* Ort + Zeitraum (wie bisher) */}
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
-                {event?.location?.name && (
-                  <span>
-                    <span className="text-slate-500">Ort:</span>{" "}
-                    <span className="font-semibold text-slate-900">
-                      {event.location.name}
-                    </span>
-                  </span>
-                )}
-                <span>
-                  <span className="text-slate-500">Zeitraum:</span>{" "}
-                  <span className="font-semibold text-slate-900">
-                    {formatDateTime(event.start_date)} –{" "}
-                    {formatDateTime(event.end_date)}
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            {/* Rechte Seite: Summary */}
-            <div className="flex flex-col items-end gap-5">
-              <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-xs">
-                <UserCheck className="h-4 w-4 text-slate-500" />
-                <span className="text-sm font-semibold text-slate-900">
-                  {total} {total === 1 ? "Anmeldung" : "Anmeldungen"}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <section ref={topRef} className="soft-surface p-0">
         {/* Divider zwischen Header und Tabelle */}
         <div className="border-t border-slate-100" />
 
-        {/* Suchfeld + Status-Slider in EINER Zeile */}
-        <div className="px-6 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          {/* Suchfeld links */}
-          <div className="w-full md:w-96">
+        {/* Kontrollleiste: Suche – Slider – Bulk-Actions */}
+        <div className="px-6 py-4 flex flex-col gap-3 md:flex-row md:items-center">
+          {/* Suche links */}
+          <div className="w-full md:w-80">
             <div className="relative">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
                 <Search className="h-4 w-4 text-slate-400" />
@@ -304,13 +308,13 @@ export default function EventBookingsIndex({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Person, E-Mail, Zimmer…"
-                className="search-input"
+                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-1.5 text-[16px] text-slate-900 outline-none focus:border-sky-300 focus:ring-1.5 focus:ring-sky-100"
               />
             </div>
           </div>
 
-          {/* Status-Slider rechts */}
-          <div className="flex justify-start md:justify-end">
+          {/* Slider mittig */}
+          <div className="flex-1 flex justify-center mt-1 md:mt-0 mx-auto">
             <StatusSlider
               tabs={STATUS_TABS}
               activeKey={statusFilter}
@@ -319,51 +323,102 @@ export default function EventBookingsIndex({
             />
           </div>
 
-          {/* Bulk-Actions-Bar */}
-          <div className="mt-0 flex flex-wrap items-center justify-between gap-3">
+          {/* Bulk-Actions rechts */}
+          {/* Bulk-Actions rechts */}
+          <div className="flex items-center justify-end gap-3 w-full md:w-auto mt-1 md:mt-0">
+            {/* Custom Dropdown im Stil des Status-Menüs */}
+            <div className="relative" ref={bulkMenuRef}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (filteredAndSortedBookings.length === 0) return;
+                  setBulkMenuOpen((prev) => !prev);
+                }}
+                className={[
+                  "inline-flex w-48 items-center justify-between rounded-xl border px-3 py-1.5 text-xs font-semibold transition",
+                  filteredAndSortedBookings.length === 0
+                    ? "border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                ].join(" ")}
+              >
+                <span className="truncate max-w-[140px]">
+                  {bulkAction
+                    ? (bulkActions.find((a) => a.value === bulkAction)?.label ??
+                       "Aktion auswählen …")
+                    : "Aktion auswählen …"}
+                </span>
+                <ChevronDown className="h-3 w-3 text-slate-400" />
+              </button>
 
-
-              <div className="flex items-center gap-2">
-                <select
-                  value={bulkAction}
-                  onChange={(e) => setBulkAction(e.target.value)}
-                  className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 shadow-sm outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-100 disabled:bg-slate-50 disabled:text-slate-300"
-                  disabled={selectedIds.length === 0}
-                >
-                  {BULK_ACTIONS.map((action) => (
-                    <option key={action.value} value={action.value}>
-                      {action.label}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  type="button"
-                  onClick={handleBulkApply}
-                  disabled={selectedIds.length === 0 || !bulkAction}
-                  className={[
-                    "inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm",
-                    selectedIds.length === 0 || !bulkAction
-                      ? "bg-slate-100 text-slate-300 cursor-not-allowed"
-                      : "bg-sky-500 text-white hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-300",
-                  ].join(" ")}
-                >
-                  Anwenden
-                </button>
-              </div>
-
-              <div className="text-xs text-slate-500">
-                {selectedIds.length === 0
-                  ? "Keine Einträge ausgewählt"
-                  : `${selectedIds.length} Einträge ausgewählt`}
-              </div>
+              {/* Popup-Liste wie beim Status-Menü */}
+              {bulkMenuOpen && filteredAndSortedBookings.length > 0 && (
+                <div className="absolute right-0 z-20 mt-1 w-56 rounded-xl border border-slate-200 bg-white py-1 text-xs shadow-lg">
+                  {bulkActions.map((action) => {
+                    const active = bulkAction === action.value;
+                    return (
+                      <button
+                        key={action.value}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBulkAction(action.value);
+                          setBulkMenuOpen(false);
+                        }}
+                        className={[
+                          "flex w-full h-8.5 items-center justify-between px-3 py-1.5 text-left",
+                          active
+                            ? "bg-sky-50 text-slate-900"
+                            : "text-slate-600 hover:bg-slate-50",
+                        ].join(" ")}
+                      >
+                        <span className="truncate">{action.label}</span>
+                        {active && (
+                          <span className="text-sky-500 text-[11px] font-semibold">
+                            ✓
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            {/* Apply-Icon-Button – bleibt, nur mit der neuen Logik */}
+            <button
+              type="button"
+              onClick={handleBulkApply}
+              disabled={!bulkAction || selectedIds.length === 0}
+              title="Ausgewählte Aktion ausführen"
+              className={[
+                "inline-flex h-8.5 items-center gap-1 rounded-xl border px-3 text-xs font-semibold transition",
+                !bulkAction || selectedIds.length === 0
+                  ? "border-slate-200 bg-white text-slate-300 cursor-not-allowed"
+                  : "border-brand-500 bg-brand-50 text-brand-600 hover:bg-brand-100 hover:border-brand-600",
+              ].join(" ")}
+            >
+              <Wand className="h-4 w-4" />
+            </button>
+
+            {/* Info-Text dezent, nur auf Desktop */}
+            <span
+              className={[
+                "hidden md:inline text-xs whitespace-nowrap transition-colors",
+                selectedIds.length > 0 ? "text-brand-600" : "text-slate-400",
+              ].join(" ")}
+            >
+              {selectedIds.length === 0
+                ? "0 ausgewählt"
+                : `${selectedIds.length} ausgewählt`}
+            </span>
+          </div>
         </div>
 
         {/* Tabellenbereich */}
         <div className="px-6 pb-4 mt-5">
           <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full table-fixed text-sm">
               <thead className="bg-sky-50/60 text-slate-700">
                 <tr>
                  {/* Select-All Checkbox */}
@@ -390,7 +445,7 @@ export default function EventBookingsIndex({
                   </th>
                    
                  {/* Person + Sort */}
-                  <th className="px-4 py-3 text-left font-semibold">
+                  <th className="px-4 py-3 text-left font-semibold w-60">
                     <div className="flex items-center gap-1">
                       <span>Person</span>
                       <div className="flex items-center gap-[2px]">
@@ -447,7 +502,7 @@ export default function EventBookingsIndex({
                     </div>
                   </th>
 
-                  <th className="px-4 py-3 text-left font-semibold">
+                  <th className="px-4 py-3 text-left font-semibold w-40">
                     Status
                   </th>
                   <th className="px-4 py-3 text-right font-semibold">
@@ -591,11 +646,62 @@ export default function EventBookingsIndex({
 
                       </td>
 
-                      {/* Status */}
-                      <td className="px-4 py-3 align-top text-slate-700">
-                        <span className="soft-badge soft-badge-neutral">
-                          {b.status_label ?? "In Bearbeitung"}
-                        </span>
+                      {/* Status (mit Inline-Menü) */}
+                      <td className="relative px-4 py-3 align-top text-slate-700">
+                        {/* Klickbarer Badge */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenStatusFor((prev) => (prev === b.id ? null : b.id));
+                          }}
+                          className={[
+                            "inline-flex items-center gap-1 cursor-pointer select-none",
+                            badgeClass(b.status_label), // nutzt deine zentralen Farben
+                          ].join(" ")}
+                        >
+                          <span>{b.status_label ?? "In Bearbeitung"}</span>
+                          <ChevronDown className="h-3 w-3 opacity-70" />
+                        </button>
+
+                        {/* Popup-Menü */}
+                        {openStatusFor === b.id && (
+                          <div className="absolute z-20 mt-1 w-44 rounded-xl border border-slate-200 bg-white py-1 text-xs shadow-lg">
+                            {STATUS_MENU.map((opt) => {
+                              const currentKey = bookingStatusKey(b); // dein vorhandener Helper
+                              const active = currentKey === opt.key;
+
+                              return (
+                                <button
+                                  key={opt.key}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleInlineStatusChange(b.id, opt.key);
+                                  }}
+                                  className={[
+                                    "flex w-full items-center justify-between px-3 py-1.5 text-left",
+                                    active
+                                      ? "bg-sky-50 text-slate-900"
+                                      : "text-slate-600 hover:bg-slate-50",
+                                  ].join(" ")}
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <span
+                                      className={["h-2 w-2 rounded-full", opt.dotClass].join(" ")}
+                                    />
+                                    <span>{opt.label}</span>
+                                  </span>
+                                  {active && (
+                                    <span className="text-sky-500 text-[11px] font-semibold">
+                                      ✓
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </td>
 
                       {/* Betrag */}
@@ -637,14 +743,19 @@ export default function EventBookingsIndex({
 
           {/* Link: Nach oben scrollen */}
           <div className="mt-4 flex justify-end">
-            <button
+          <button
               type="button"
-              onClick={() =>
-                window.scrollTo({
-                  top: 0,
-                  behavior: "smooth",
-                })
-              }
+              onClick={() => {
+                if (topRef.current) {
+                  topRef.current.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                } else {
+                  // Fallback, falls das Ref aus irgendeinem Grund nicht gesetzt ist
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
               className="text-xs font-semibold text-sky-600 hover:text-sky-800 hover:underline"
             >
               Nach oben

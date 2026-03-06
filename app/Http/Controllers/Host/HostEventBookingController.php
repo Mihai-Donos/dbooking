@@ -7,8 +7,11 @@ use App\Models\Event;
 use App\Models\Booking;
 use App\Enums\OfferChargeType;
 use App\Enums\BookingStatus;
+use App\Enums\BookingBulkAction;
+
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+
 
 class HostEventBookingController extends Controller
 {
@@ -106,6 +109,14 @@ class HostEventBookingController extends Controller
             ],
         ];
 
+        $bulkActions = collect(BookingBulkAction::cases())
+            ->map(fn(BookingBulkAction $case) => [
+                'value' => $case->value,
+                'label' => $case->label(),
+            ])
+            ->values()
+            ->all();
+
         return Inertia::render('Host/EventBookings/Index', [
             'event' => [
                 'id' => $event->id,
@@ -120,6 +131,88 @@ class HostEventBookingController extends Controller
             ],
             'bookings' => $bookings,
             'summary' => $summary,
+            'bulkActions' => $bulkActions,
         ]);
     }
+
+    public function bulk(Request $request, Event $event)
+    {
+        $user = $request->user();
+        abort_unless($user, 403);
+
+        // 🔐 Optional: sicherstellen, dass der User Host dieses Events ist
+        // abort_unless($event->host_id === $user->id, 403);
+
+        // 1. Validierung der Daten aus dem Frontend
+        $data = $request->validate([
+            'action' => ['required', 'string'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:bookings,id'],
+        ]);
+
+        // 2. Action-Enum ermitteln
+        $actionEnum = BookingBulkAction::tryFrom($data['action']);
+
+        if (!$actionEnum) {
+            return back()->withErrors([
+                'action' => 'Unbekannte Bulk-Aktion.',
+            ]);
+        }
+
+        // 3. Nur Buchungen dieses Events bearbeiten (Sicherheit!)
+        $query = Booking::where('event_id', $event->id)
+            ->whereIn('id', $data['ids']);
+
+        // 4. Je nach Aktion verarbeiten
+        switch ($actionEnum) {
+            case BookingBulkAction::StatusInReview:
+                $query->update([
+                    'status' => BookingStatus::InReview->value,
+                ]);
+                $message = 'Status auf "In Bearbeitung" gesetzt.';
+                break;
+
+            case BookingBulkAction::StatusConfirmed:
+                $query->update([
+                    'status' => BookingStatus::Confirmed->value,
+                ]);
+                $message = 'Status auf "Bestätigt" gesetzt.';
+                break;
+
+            case BookingBulkAction::StatusCancelled:
+                $query->update([
+                    'status' => BookingStatus::Cancelled->value,
+                ]);
+                $message = 'Status auf "Storniert" gesetzt.';
+                break;
+
+            case BookingBulkAction::ResetRoom:
+                $query->update([
+                    'room_id' => null,
+                ]);
+                $message = 'Zimmerzuweisungen wurden zurückgesetzt.';
+                break;
+
+            case BookingBulkAction::Delete:
+                // ⚠️ Vorsicht: wirkliche Löschung – evtl. vorher confirm im UI!
+                $count = (clone $query)->count();
+                $query->delete();
+                $message = $count . ' Buchungen gelöscht.';
+                break;
+
+            case BookingBulkAction::ExportCsv:
+                // Placeholder – hier könntest du später einen Export implementieren
+                $message = 'Export ist noch nicht implementiert.';
+                break;
+
+            default:
+                $message = 'Keine Aktion ausgeführt.';
+                break;
+        }
+
+        return redirect()
+            ->route('host.events.bookings', $event->id)
+            ->with('success', $message);
+    }
 }
+

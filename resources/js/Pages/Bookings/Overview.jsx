@@ -17,6 +17,7 @@ import {
 import AppShell from "@/Layouts/AppShell";
 import { TIME_LABELS } from "@/utils/timeLabels";
 import { labelForTime } from "@/utils/timeLabels";
+import { badgeClass } from "@/utils/statusBadges";
 
 function formatDateTimeDE(iso) {
   if (!iso) return "—";
@@ -48,15 +49,6 @@ function moneyDE(v) {
   }).format(Number.isFinite(n) ? n : 0);
 }
 
-function badgeClass(label) {
-  const s = String(label || "").toLowerCase();
-  if (s.includes("in bearbeitung")) return "soft-badge soft-badge-neutral";
-  if (s.includes("bestät")) return "soft-badge soft-badge-success";
-  if (s.includes("anmeldung")) return "soft-badge soft-badge-success";
-  if (s.includes("storniert")) return "soft-badge soft-badge-danger";
-  if (s.includes("beendet")) return "soft-badge soft-badge-neutral";
-  return "soft-badge soft-badge-neutral";
-}
 
 // Optionen -> Meta mit lucide icons (alles neutral, nur Leaf leicht grün)
 function optionMeta(b) {
@@ -194,81 +186,81 @@ export default function Overview({ groups = [] }) {
                 </div>
 
                 <div className="flex flex-col items-end gap-3">
-  {/* Summe */}
-  <div className="text-right leading-tight">
-    <div className="text-xs text-slate-500">Gesamt</div>
-    <div className="text-lg font-semibold text-slate-900 tabular-nums whitespace-nowrap">
-      {moneyDE(e.total_amount)} €
-    </div>
-  </div>
+                  {/* Summe */}
+                  <div className="text-right leading-tight">
+                    <div className="text-xs text-slate-500">Gesamt</div>
+                    <div className="text-lg font-semibold text-slate-900 tabular-nums whitespace-nowrap">
+                      {moneyDE(e.total_amount)} €
+                    </div>
+                  </div>
 
-  {/* Anzahl */}
-  <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-xs">
-    <span className="text-sm font-semibold text-slate-900">
-      {e.booking_count}×
-    </span>
-    <span className="text-sm text-slate-600">
-      {Number(e.booking_count) === 1 ? "Platz" : "Plätze"}
-    </span>
-  </div>
+                  {/* Anzahl */}
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-xs">
+                    <span className="text-sm font-semibold text-slate-900">
+                      {e.booking_count}×
+                    </span>
+                    <span className="text-sm text-slate-600">
+                      {Number(e.booking_count) === 1 ? "Person" : "Personen"}
+                    </span>
+                  </div>
 
-  {/* Quick Actions: Person hinzufügen + Chevron */}
-  <div className="flex items-center gap-2">
-    {/* Mobile: nur Icon-Button */}
-    <button
-      type="button"
-      className="icon-btn icon-btn--edit sm:hidden border-slate-300 hover:border-slate-400"
-      aria-label="Person hinzufügen"
-      onClick={() =>
-        router.visit(route("bookings.new", e.id), {
-          method: "get",
-          data: { add: 1 },
-          preserveScroll: false,
-        })
-      }
-    >
-      <UserPlus className="h-4 w-4" />
-    </button>
+                  {/* Quick Actions: Person hinzufügen + Chevron */}
+                  <div className="flex items-center gap-2">
+                    {/* Mobile: nur Icon-Button */}
+                    <button
+                      type="button"
+                      className="icon-btn icon-btn--edit sm:hidden border-slate-300 hover:border-slate-400"
+                      aria-label="Person hinzufügen"
+                      onClick={() =>
+                        router.visit(route("bookings.new", e.id), {
+                          method: "get",
+                          data: { add: 1 },
+                          preserveScroll: false,
+                        })
+                      }
+                    >
+                      <UserPlus className="h-4 w-4" />
+                    </button>
 
-    {/* Desktop: voller Primary-Button */}
-    <button
-      type="button"
-      className="hidden sm:inline-flex items-center gap-2 btn btn-primary"
-      onClick={() =>
-        router.visit(route("bookings.new", e.id), {
-          method: "get",
-          data: { add: 1 },
-          preserveScroll: false,
-        })
-      }
-    >
-      <UserPlus className="h-4 w-4" />
-      <span>Person hinzufügen</span>
-    </button>
+                    {/* Desktop: voller Primary-Button */}
+                    <button
+                      type="button"
+                      className="hidden sm:inline-flex items-center gap-2 btn btn-primary"
+                      onClick={() =>
+                        router.visit(route("bookings.new", e.id), {
+                          method: "get",
+                          data: { add: 1 },
+                          preserveScroll: false,
+                        })
+                      }
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      <span>Person hinzufügen</span>
+                    </button>
 
-    {/* Chevron */}
-    <button
-      type="button"
-      className="icon-btn icon-btn--edit border-slate-300 hover:border-slate-400"
-      aria-label={isOpen ? "Einklappen" : "Ausklappen"}
-      onClick={() => toggle(e.id)}
-    >
-      <svg
-        className={`h-4 w-4 transition-transform ${
-          isOpen ? "rotate-180" : ""
-        }`}
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          fillRule="evenodd"
-          d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
-          clipRule="evenodd"
-        />
-      </svg>
-    </button>
-  </div>
-</div>
+                    {/* Chevron */}
+                    <button
+                      type="button"
+                      className="icon-btn icon-btn--edit border-slate-300 hover:border-slate-400"
+                      aria-label={isOpen ? "Einklappen" : "Ausklappen"}
+                      onClick={() => toggle(e.id)}
+                    >
+                      <svg
+                        className={`h-4 w-4 transition-transform ${
+                          isOpen ? "rotate-180" : ""
+                        }`}
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
 
               </div>
 

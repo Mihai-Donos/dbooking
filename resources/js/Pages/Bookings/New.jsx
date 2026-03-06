@@ -633,7 +633,7 @@ useEffect(() => {
       }
       headerBottom={headerBottom}
     >
-      <Head title="Neue Buchung (UX v2)" />
+      <Head title="Neue Anmeldung" />
 
       {flashSuccess ? (
         <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -793,7 +793,7 @@ useEffect(() => {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Name */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <label className="block text-base font-semibold text-slate-900">Vorname, Name*</label>
+                <label className="block text-base font-semibold text-slate-900">Vorname Name*</label>
                 <input
                   ref={nameInputRef}
                   value={data.per_day.label}
@@ -816,7 +816,7 @@ useEffect(() => {
                   >
                     {perDayOffers.map((o) => (
                       <option key={o.id} value={o.id}>
-                        {o.name} ({formatEuro(o.price)} €)
+                        {o.name} ({o.description ? `  ${o.description}` : ""} ) 
                       </option>
                     ))}
                   </select>
