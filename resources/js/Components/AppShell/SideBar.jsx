@@ -34,7 +34,7 @@ export default function SideBar({ nav = [], sidebarOpen, setSidebarOpen, onNavig
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-40 w-[320px] shrink-0",
+          "fixed inset-y-0 left-0 z-40 w-72 shrink-0",
           "bg-white/70 backdrop-blur-xl",
           "border-r border-white/40",
           "shadow-[0_18px_40px_rgba(15,23,42,0.08)]",

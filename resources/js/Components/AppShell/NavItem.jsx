@@ -154,7 +154,7 @@ export default function NavItem({ item, currentPath, onNavigate }) {
                 />
 
                 {/* Child-Label + optional Child-Badge (falls du es mal brauchst) */}
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex w-full items-center justify-between gap-2 min-w-0">
                   <span className="truncate ml-2">{c.label}</span>
                   {renderBadge(c.badge)}
                 </div>

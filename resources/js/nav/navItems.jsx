@@ -59,8 +59,50 @@ export function getNavItems(role = "user") {
           icon: Calendar,
           match: ["/host/events"],
           children: [
-            { label: "Übersicht", href: "/host/events", match: ["/host/events"], exact: true },
-            { label: "Event anlegen", href: "/host/events/create", match: ["/host/events/create"] },
+            {
+              label: "Übersicht",
+              href: "/host/events",
+              match: ["/host/events"],
+              exact: true,
+            },
+            {
+              label: "Anmeldungen",
+              href: "/host/events/bookings",
+              match: ["/host/events/bookings"],
+            },
+            {
+              label: "Zimmerplanung",
+              href: "/host/events/rooms",
+              match: ["/host/events/rooms"],
+            },
+            {
+              label: "Verpflegung",
+              href: "/host/events/catering",
+              match: ["/host/events/catering"],
+              badge: "Soon",
+            },
+            {
+              label: "Aktivitäten & Aufgaben",
+              href: "/host/events/activities",
+              match: ["/host/events/activities"],
+              badge: "Soon",
+            },
+            {
+              label: "Abrechnung",
+              href: "/host/events/billing",
+              match: ["/host/events/billing"],
+              badge: "Soon",
+            },
+            {
+              label: "Event anlegen",
+              href: "/host/events/create",
+              match: ["/host/events/create"],
+            },
+            {
+              label: "Archiv",
+              href: "/host/events/archive",
+              match: ["/host/events/archive"],
+            },
           ],
         },
         {
@@ -96,8 +138,50 @@ export function getNavItems(role = "user") {
           icon: Calendar,
           match: ["/admin/events"],
           children: [
-            { label: "Übersicht", href: "/admin/events", match: ["/admin/events"], exact: true },
-            { label: "Event anlegen", href: "/admin/events/create", match: ["/admin/events/create"] },
+            {
+              label: "Übersicht",
+              href: "/host/events",
+              match: ["/host/events"],
+              exact: true,
+            },
+            {
+              label: "Anmeldungen",
+              href: "/host/events/bookings",
+              match: ["/host/events/bookings"],
+            },
+            {
+              label: "Zimmerplanung",
+              href: "/host/events/rooms",
+              match: ["/host/events/rooms"],
+            },
+            {
+              label: "Verpflegung",
+              href: "/host/events/catering",
+              match: ["/host/events/catering"],
+              badge: "Soon",
+            },
+            {
+              label: "Aktivitäten & Aufgaben",
+              href: "/host/events/activities",
+              match: ["/host/events/activities"],
+              badge: "Soon",
+            },
+            {
+              label: "Abrechnung",
+              href: "/host/events/billing",
+              match: ["/host/events/billing"],
+              badge: "Soon",
+            },
+            {
+              label: "Event anlegen",
+              href: "/host/events/create",
+              match: ["/host/events/create"],
+            },
+            {
+              label: "Archiv",
+              href: "/host/events/archive",
+              match: ["/host/events/archive"],
+            },
           ],
         },
 
